@@ -6,10 +6,12 @@ import py_compile
 import os
 import json
 
-if len(sys.argv)==1:
-    print ("""
+if len(sys.argv) == 1:
+    print(
+        """
 usage: pypacker -a <module>
-""")
+"""
+    )
 
 verbose = "-v" in sys.argv
 
@@ -75,7 +77,7 @@ with open("{self.app_name}.tmp","w") as f:
 
         as_module = pathlib.Path(self.app_name)
 
-        print ("Looking for", as_module.absolute())
+        print("Looking for", as_module.absolute())
 
         if as_module.is_dir():
             self.standalone_file = False
@@ -87,7 +89,9 @@ with open("{self.app_name}.tmp","w") as f:
         if self.standalone_file is None:
             raise Exception("Couldn't determine what to import")
 
-        print(f"Importing {self.app_name} as {'file' if self.standalone_file else 'module'}")
+        print(
+            f"Importing {self.app_name} as {'file' if self.standalone_file else 'module'}"
+        )
 
         import importlib.util
 
@@ -183,7 +187,7 @@ class AppInfo:
 
         self.appdir = config_file["app"]
         if self.appdir.endswith(".py"):
-            self.app_title = self.appdir.rsplit('.py',1)[0]
+            self.app_title = self.appdir.rsplit(".py", 1)[0]
             self.standalone = True
         else:
             self.app_title = self.appdir
@@ -191,7 +195,7 @@ class AppInfo:
             self.boot = f"import {self.app_title}\nquit()"
         else:
             self.boot = f"import {self.app_title}"
-        
+
         self.stdlib = config_file["std_lib"]
         self.copy_files = config_file.get("copy")
         self.exclude = set(config_file.get("exclude", []))
@@ -248,9 +252,9 @@ class AppInfo:
         )
 
         self.stdlib.extend(self.lib_items)
-        self.stdlib.extend(["../DLLS/libffi-7.dll","encodings/cp437.py"])
+        self.stdlib.extend(["../DLLS/libffi-7.dll", "encodings/cp437.py"])
         all_libs = set(self.stdlib)
-        
+
         for lib in all_libs:
             if not (self.path_to_libs / lib).exists():
                 print(f"\tWarning: {lib} not found")
@@ -258,15 +262,13 @@ class AppInfo:
             if lib in self.exclude:
                 vprint("\tExcluding", lib)
                 continue
-            if lib.endswith(".dll"):                
+            if lib.endswith(".dll"):
                 shutil.copy(self.path_to_libs / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
                 if lib.endswith("_tkinter.pyd"):
                     self.use_tk = True
                 if lib.startswith(str(self.abs_root_path)):
-                    target_path = pathlib.Path(
-                        lib.replace(str(self.abs_root_path), "")
-                    )
+                    target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
                     print(target_path.parent.name)
                     target_directory = self.lib_target_path / str(
                         target_path.parent.name
@@ -315,7 +317,7 @@ class AppInfo:
             if any(file.startswith(x) for x in self.app_exclude):
                 vprint("Excluding", file)
             path_to_file = pathlib.Path(file)
-            if str(path_to_file.parent)!=".":
+            if str(path_to_file.parent) != ".":
                 all_paths.add(path_to_file.parent)
             if not path_to_file.exists():
                 continue
@@ -324,20 +326,20 @@ class AppInfo:
 
         # TODO: pre-emptively compile all app paths?
 
-        print (all_paths)
-        print ([str(x) for x in all_paths])
+        print(all_paths)
+        print([str(x) for x in all_paths])
 
         ap2 = set()
         for p in all_paths:
             for path, _, files in os.walk(p):
                 if not path.endswith("__pycache__"):
                     ap2.add(path)
-        
-        print (ap2)
+
+        print(ap2)
         for dir in ap2:
             for file in pathlib.Path(dir).glob("*"):
                 if file.is_file():
-                    if not file.suffix==".py":
+                    if not file.suffix == ".py":
                         target = pathlib.Path(self.build_path, dir)
                         if not target.exists():
                             target.mkdir(parents=True)
@@ -397,7 +399,7 @@ class AppInfo:
             unneeded_lib = tk_dest.glob("*.lib")
             for f in unneeded_lib:
                 f.unlink()
-            
+
 
 def main():
 
