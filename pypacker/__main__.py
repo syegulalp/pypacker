@@ -9,7 +9,9 @@ import json
 if len(sys.argv) == 1:
     print(
         """
-usage: pypacker -a <module>
+usage: pypacker
+    -a <module> -- analyze module
+    -v -- for verbose output
 """
     )
 
@@ -69,7 +71,6 @@ with open("{self.app_name}.tmp","w") as f:
         pathlib.Path(f"{self.app_name}_analysis.py").unlink()
 
     def delete_tempdata(self):
-        return
         pathlib.Path(f"{self.app_name}.tmp").unlink()
 
     def analyze(self):
@@ -122,13 +123,12 @@ with open("{self.app_name}.tmp","w") as f:
 
         std_lib = []
         app_lib = []
-        libs = []
+        binaries = []
         app_modules = []
-        # distinct_libs = set()
 
         for m, mn in loaded_modules:
             if mn.endswith(".pyd") or mn.endswith(".dll"):
-                libs.append(mn)
+                binaries.append(mn)
             elif mn.startswith(f"{lib_dir}\\"):
                 t = mn.replace(f"{lib_dir}\\", "")
                 std_lib.append(t)
@@ -140,7 +140,6 @@ with open("{self.app_name}.tmp","w") as f:
                     else:
                         t = mn.replace(f"{root_app_dir}\\", "")
                         app_modules.append(t)
-                        # print (t, mn, root_app_dir)
 
         self.delete_tempdata()
         self.delete_analysis_script()
@@ -150,7 +149,7 @@ with open("{self.app_name}.tmp","w") as f:
             "std_lib": sorted(set(std_lib)),
             "app_lib": sorted(set(app_lib)),
             "app_modules": sorted(set(app_modules)),
-            "libs": sorted(set(libs)),
+            "binaries": sorted(set(binaries)),
         }
 
         # TODO:
@@ -196,15 +195,17 @@ class AppInfo:
         else:
             self.boot = f"import {self.app_title}"
 
+        self.abs_root_path = pathlib.Path(".").absolute()
+
         self.stdlib = config_file["std_lib"]
+        self.app_lib = config_file["app_lib"]
+        self.app_modules = config_file["app_modules"]
+        self.lib_dirs = config_file.get("lib_dirs", [])
+        self.binaries = config_file.get("binaries", [])
+
         self.copy_files = config_file.get("copy")
         self.exclude = set(config_file.get("exclude", []))
         self.app_exclude = set(config_file.get("app_exclude", []))
-        self.app_lib = config_file["app_lib"]
-        self.lib_dirs = config_file.get("lib_dirs", [])
-        self.lib_items = config_file["libs"]
-        self.app_modules = config_file["app_modules"]
-        self.abs_root_path = pathlib.Path(".").absolute()
 
     def create_dirs(self):
 
@@ -235,11 +236,20 @@ class AppInfo:
 
         target_pth = self.lib_target_path.parts[-1]
 
+        output = [
+            ".",
+            f"{target_pth}",
+            f"{target_pth}\\{self.py_version}.zip",
+            f"{target_pth}\\pkg.zip",
+            f"{target_pth}\\src.zip",
+            "",
+            "import site"
+        ]
+
         with open(self.build_path / f"{self.py_version}._pth", "w") as f:
-            f.write(
-                f".\n{target_pth}\n{target_pth}\\{self.py_version}.zip\n{target_pth}\\pkg.zip\n{target_pth}\\src.zip\n"
-            )
-            f.write("\nimport site")
+            for line in output:
+                f.write(line)
+                f.write("\n")
 
     def create_stdlib_archive(self):
 
@@ -251,7 +261,7 @@ class AppInfo:
             compression=zipfile.ZIP_DEFLATED,
         )
 
-        self.stdlib.extend(self.lib_items)
+        self.stdlib.extend(self.binaries)
         self.stdlib.extend(["../DLLS/libffi-7.dll", "encodings/cp437.py"])
         all_libs = set(self.stdlib)
 
@@ -324,18 +334,12 @@ class AppInfo:
             compiled = py_compile.compile(str(path_to_file.absolute()), optimize=2)
             self.app_zip.write(compiled, f"{file}c")
 
-        # TODO: pre-emptively compile all app paths?
-
-        print(all_paths)
-        print([str(x) for x in all_paths])
-
         ap2 = set()
         for p in all_paths:
             for path, _, files in os.walk(p):
                 if not path.endswith("__pycache__"):
                     ap2.add(path)
 
-        print(ap2)
         for dir in ap2:
             for file in pathlib.Path(dir).glob("*"):
                 if file.is_file():
@@ -367,7 +371,7 @@ class AppInfo:
 
     def rename_execs(self):
 
-        for exe, extension in (("pythonw.exe", ".exe"), ("python.exe", "_debug.exe")):
+        for exe, extension in (("pythonw.exe", ".exe"), ("python.exe", "_console.exe")):
             pathlib.Path(self.build_path, exe).rename(
                 self.build_path / f"{self.app_title}{extension}"
             )
