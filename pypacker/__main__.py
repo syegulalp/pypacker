@@ -62,8 +62,6 @@ with open("{self.app_name}.tmp","w") as f:
     json.dump(sorted(final_modules), f)
         """
 
-        # final_modules.append({{"stdlib": list(original_modules)}})
-
         with open(f"{self.app_name}_analysis.py", "w") as f:
             f.write(temp)
 
@@ -93,13 +91,6 @@ with open("{self.app_name}.tmp","w") as f:
         print(
             f"Importing {self.app_name} as {'file' if self.standalone_file else 'module'}"
         )
-
-        import importlib.util
-
-        if self.standalone_file:
-            module = importlib.util.spec_from_file_location(as_module.absolute())
-        else:
-            module = importlib.util.find_spec(self.app_name)
 
         import site
         import json
@@ -279,7 +270,6 @@ class AppInfo:
                     self.use_tk = True
                 if lib.startswith(str(self.abs_root_path)):
                     target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
-                    print(target_path.parent.name)
                     target_directory = self.lib_target_path / str(
                         target_path.parent.name
                     )
@@ -303,7 +293,10 @@ class AppInfo:
             self.lib_target_path / "pkg.zip", mode="w", compression=zipfile.ZIP_DEFLATED
         )
 
+        all_libs = set()
+
         for file in self.app_lib:
+            all_libs.add(pathlib.Path(self.path_to_venv_libs, file.split("\\",1)[0]))
             outfile = pathlib.Path(self.path_to_venv_libs, file)
             compiled = py_compile.compile(outfile, optimize=2)
             self.pkgzip.write(
@@ -312,6 +305,13 @@ class AppInfo:
             )
 
         self.pkgzip.close()
+
+        for libpath in all_libs:
+            for path, _, files in os.walk(libpath):
+                for f in files:
+                    if not f.endswith((".py", ".pyc")):
+                        print (">>", path, f)
+                        # TODO: move to parallel directory
 
     def add_app_libraries(self):
 
@@ -390,8 +390,6 @@ class AppInfo:
                 self.dist_zip.write(pathlib.Path(path, f), pathlib.Path(*p, f))
 
     def add_special_libs(self):
-
-        # add TCL/TK for tkinter
 
         if self.use_tk:
             tk_src = pathlib.Path(self.path_to_exec, "tcl")
