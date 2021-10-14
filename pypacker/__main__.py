@@ -15,6 +15,8 @@ usage: pypacker
 """
     )
 
+# TODO: "simple" mode - just copy everything, no analysis
+
 verbose = "-v" in sys.argv
 
 vprint = lambda *a: None
@@ -200,8 +202,8 @@ class AppInfo:
 
     def create_dirs(self):
 
-        self.path_to_exec = pathlib.Path(sys.base_prefix)
-        self.path_to_libs = self.path_to_exec / "Lib"
+        self.path_to_original_executable = pathlib.Path(sys.base_prefix)
+        self.path_to_original_libs = self.path_to_original_executable / "Lib"
         self.path_to_venv_libs = pathlib.Path(sys.prefix, "Lib", "site-packages")
         self.build_path = pathlib.Path("dist")
 
@@ -223,16 +225,16 @@ class AppInfo:
         base_files = ["python.exe", "pythonw.exe", f"{self.py_version}.dll"]
 
         for file in base_files:
-            shutil.copy(pathlib.Path(self.path_to_exec, file), self.build_path)
+            shutil.copy(pathlib.Path(self.path_to_original_executable, file), self.build_path)
 
-        target_pth = self.lib_target_path.parts[-1]
+        target_path_for_base_files = self.lib_target_path.parts[-1]
 
         output = [
             ".",
-            f"{target_pth}",
-            f"{target_pth}\\{self.py_version}.zip",
-            f"{target_pth}\\pkg.zip",
-            f"{target_pth}\\src.zip",
+            f"{target_path_for_base_files}",
+            f"{target_path_for_base_files}\\{self.py_version}.zip",
+            f"{target_path_for_base_files}\\pkg.zip",
+            f"{target_path_for_base_files}\\app.zip",
             "",
             "import site"
         ]
@@ -257,20 +259,20 @@ class AppInfo:
         all_libs = set(self.stdlib)
 
         for lib in all_libs:
-            if not (self.path_to_libs / lib).exists():
+            if not (self.path_to_original_libs / lib).exists():
                 print(f"\tWarning: {lib} not found")
                 continue
             if lib in self.exclude:
                 vprint("\tExcluding", lib)
                 continue
             if lib.endswith(".dll"):
-                shutil.copy(self.path_to_libs / lib, self.lib_target_path)
+                shutil.copy(self.path_to_original_libs / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
                 if lib.endswith("_tkinter.pyd"):
                     self.use_tk = True
                 if lib.startswith(str(self.abs_root_path)):
                     target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
-                    target_directory = self.lib_target_path / str(
+                    target_directory = self.build_path / str(
                         target_path.parent.name
                     )
                     if not target_directory.exists():
@@ -279,7 +281,7 @@ class AppInfo:
                 else:
                     shutil.copy(lib, self.lib_target_path)
             else:
-                compiled = py_compile.compile(self.path_to_libs / lib, optimize=2)
+                compiled = py_compile.compile(self.path_to_original_libs / lib, optimize=2)
                 self.stdlib_zip.write(
                     compiled,
                     lib + "c",
@@ -310,15 +312,27 @@ class AppInfo:
             for path, _, files in os.walk(libpath):
                 for f in files:
                     if not f.endswith((".py", ".pyc")):
-                        print (">>", path, f)
-                        # TODO: move to parallel directory
+                        path_parent = pathlib.Path(libpath).parent
+                        # XXX
+                        ppath = path.replace(str(path_parent)+"\\","")
+                        target_directory = pathlib.Path(
+                            self.build_path,
+                            ppath
+                        )
+                        if not target_directory.exists():
+                            target_directory.mkdir(parents=True)
+                        shutil.copy(
+                            pathlib.Path(path, f),
+                            target_directory
+                        )
+                        # print (">>", pathlib.Path(path, f), target_directory)
 
     def add_app_libraries(self):
 
         print("Adding app libraries")
 
         self.app_zip = zipfile.ZipFile(
-            self.lib_target_path / "src.zip", "w", compression=zipfile.ZIP_DEFLATED
+            self.lib_target_path / "app.zip", "w", compression=zipfile.ZIP_DEFLATED
         )
 
         all_paths = set()
@@ -392,10 +406,10 @@ class AppInfo:
     def add_special_libs(self):
 
         if self.use_tk:
-            tk_src = pathlib.Path(self.path_to_exec, "tcl")
+            tk_src = pathlib.Path(self.path_to_original_executable, "tcl")
             tk_dest = pathlib.Path(self.build_path, "lib")
             shutil.copytree(tk_src, tk_dest)
-            dll_src = pathlib.Path(self.path_to_exec, "DLLs")
+            dll_src = pathlib.Path(self.path_to_original_executable, "DLLs")
             for f in dll_src.glob("t*.dll"):
                 shutil.copy(f, self.lib_target_path)
             unneeded_lib = tk_dest.glob("*.lib")
