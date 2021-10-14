@@ -34,7 +34,14 @@ The resulting redistributable will be placed in the `dist` subdirectory. A zippe
 * Third-party packages are also included.
 * Both console and windowed executables are provided.
 
-External assets, like files loaded by the program itself (not imports) are not detected. I'm adding mechanisms to copy them in manually by modifying the tracefile.
+Note that PyPacker works best with a program structure like this:
+
+```
+entrypoint.py
+    \ appdir
+```
+
+where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
 
 ## Caveats
 
