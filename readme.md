@@ -43,9 +43,21 @@ entrypoint.py
 
 where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
 
+## Options
+
+The following command line options are supported:
+
+`-a` -- Specify an entry point for analysis. Not needed if you're re-using a previously generated analysis.
+`-v` -- Verbose output.
+`-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
+`-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
+`-t` -- Shortcut for `-ta` and `-tl`.
+
 ## Caveats
 
 Very buggy. Drastically incomplete. For instance, stuff like NumPy probably doesn't work yet.
+
+Treeshaking is highly experimental.
 
 ## License
 
