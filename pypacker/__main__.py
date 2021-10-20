@@ -12,6 +12,10 @@ if len(sys.argv) == 1:
 usage: pypacker
     -a <module> -- analyze module
     -v -- for verbose output
+    -i <file> -- include a specific file/path/wildcard
+    -x <file> -- exclude a specific file/path/wildcard
+    -ta -- treeshake application
+    -tl -- treeshake libraries    
 """
     )
 
@@ -23,6 +27,8 @@ vprint = lambda *a: None
 if verbose:
     vprint = lambda *a: print(*a)
 
+treeshake_app = "-ta" in sys.argv
+treeshake_libs = "-tl" in sys.argv
 
 class IniFileMissing(Exception):
     pass
@@ -143,6 +149,9 @@ with open("{self.app_name}.tmp","w") as f:
             "app_lib": sorted(set(app_lib)),
             "app_modules": sorted(set(app_modules)),
             "binaries": sorted(set(binaries)),
+            "copy": [],
+            "exclude": [],
+            "app_exclude": [],
         }
 
         # TODO:
@@ -196,7 +205,7 @@ class AppInfo:
         self.lib_dirs = config_file.get("lib_dirs", [])
         self.binaries = config_file.get("binaries", [])
 
-        self.copy_files = config_file.get("copy")
+        self.copy_files = set(config_file.get("copy", []))
         self.exclude = set(config_file.get("exclude", []))
         self.app_exclude = set(config_file.get("app_exclude", []))
 
@@ -297,35 +306,79 @@ class AppInfo:
 
         all_libs = set()
 
-        for file in self.app_lib:
-            all_libs.add(pathlib.Path(self.path_to_venv_libs, file.split("\\",1)[0]))
-            outfile = pathlib.Path(self.path_to_venv_libs, file)
-            compiled = py_compile.compile(outfile, optimize=2)
-            self.pkgzip.write(
-                compiled,
-                pathlib.Path(file + "c"),
-            )
+        if treeshake_libs:
 
-        self.pkgzip.close()
+            print ("Treeshaking")
 
-        for libpath in all_libs:
-            for path, _, files in os.walk(libpath):
-                for f in files:
-                    if not f.endswith((".py", ".pyc")):
-                        path_parent = pathlib.Path(libpath).parent
-                        # XXX
-                        ppath = path.replace(str(path_parent)+"\\","")
-                        target_directory = pathlib.Path(
-                            self.build_path,
-                            ppath
-                        )
-                        if not target_directory.exists():
-                            target_directory.mkdir(parents=True)
-                        shutil.copy(
-                            pathlib.Path(path, f),
-                            target_directory
-                        )
-                        # print (">>", pathlib.Path(path, f), target_directory)
+            for file in self.app_lib:
+                all_libs.add(pathlib.Path(self.path_to_venv_libs, file.split("\\",1)[0]))
+                outfile = pathlib.Path(self.path_to_venv_libs, file)
+                compiled = py_compile.compile(outfile, optimize=2)
+                self.pkgzip.write(
+                    compiled,
+                    pathlib.Path(file + "c"),
+                )
+
+            self.pkgzip.close()
+
+            for libpath in all_libs:
+                for path, _, files in os.walk(libpath):
+                    for f in files:
+                        if not f.endswith((".py", ".pyc")):
+                            path_parent = pathlib.Path(libpath).parent
+                            # XXX
+                            ppath = path.replace(str(path_parent)+"\\","")
+                            target_directory = pathlib.Path(
+                                self.build_path,
+                                ppath
+                            )
+                            if not target_directory.exists():
+                                target_directory.mkdir(parents=True)
+                            shutil.copy(
+                                pathlib.Path(path, f),
+                                target_directory
+                            )
+                            # print (">>", pathlib.Path(path, f), target_directory)
+
+        else:
+
+            print ("All libs")
+
+            for file in self.app_lib:
+                all_libs.add(pathlib.Path(self.path_to_venv_libs, file.split("\\",1)[0]))
+
+            for libpath in all_libs:
+                
+                destzip =pathlib.Path(libpath).stem
+
+                for path, _, files in os.walk(libpath):
+                    if "__pycache__" in path:
+                        continue
+                    outpath = path.replace(str(libpath), "\\")
+                    # print (outpath)
+                    # print (outpath, path)
+                    for f in files:
+                        if not f.endswith((".py", ".pyc")):
+                            path_parent = pathlib.Path(libpath).parent
+                            ppath = path.replace(str(path_parent)+"\\","")
+                            target_directory = pathlib.Path(
+                                self.build_path,
+                                ppath
+                            )
+                        else:
+                            outfile = pathlib.Path(libpath, path, f)
+                            try:
+                                compiled = py_compile.compile(outfile, optimize=2)
+                            except:
+                                continue
+                            else:
+                                self.pkgzip.write(
+                                    compiled,
+                                    pathlib.Path(outpath, f + "c"),
+                                )
+            
+            self.pkgzip.close()
+
 
     def add_app_libraries(self):
 
@@ -416,7 +469,7 @@ class AppInfo:
             for f in unneeded_lib:
                 f.unlink()
 
-
+    
 def main():
 
     analyze = None
