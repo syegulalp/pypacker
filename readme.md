@@ -47,11 +47,11 @@ where `entrypoint.py` is what's executed to start your app, and your actual app 
 
 The following command line options are supported:
 
-`-a` -- Specify an entry point for analysis. Not needed if you're re-using a previously generated analysis.
-`-v` -- Verbose output.
-`-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
-`-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
-`-t` -- Shortcut for `-ta` and `-tl`.
+* `-a` -- Specify an entry point for analysis. Not needed if you're re-using a previously generated analysis.
+* `-v` -- Verbose output.
+* `-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
+* `-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
+* `-t` -- Shortcut for `-ta` and `-tl`.
 
 ## Caveats
 
