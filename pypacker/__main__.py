@@ -191,9 +191,10 @@ class AppInfo:
         else:
             self.app_title = self.appdir
         if self.standalone:
-            self.boot = f"import {self.app_title}\nquit()"
+            self.boot = f'import {self.app_title}\nimport os\nos._exit(0)'
         else:
             self.boot = f"import {self.app_title}"
+        
 
         self.abs_root_path = pathlib.Path(".").absolute()
 
