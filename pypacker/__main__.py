@@ -453,7 +453,7 @@ class AppInfo:
                         continue
                     for file in files:
                         if not file.endswith(".py"):
-                            target = pathlib.Path(self.build_path, dir)
+                            target = pathlib.Path(self.build_path, path)
                             if not target.exists():
                                 target.mkdir(parents=True)
                             shutil.copy(pathlib.Path(path, file), target)
