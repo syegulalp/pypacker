@@ -59,6 +59,8 @@ Very buggy. Drastically incomplete. For instance, stuff like NumPy probably does
 
 Treeshaking is highly experimental.
 
+If you are packing up a single file that requires the presence of other non-Python files, they will not be detected. I'm working on a mechanism to allow arbitrary files to be added to the package.
+
 ## License
 
 MIT
