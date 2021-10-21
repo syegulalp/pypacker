@@ -88,8 +88,10 @@ with open("{self.app_name}.tmp","w") as f:
             self.standalone_file = False
         elif as_module.is_file():
             self.standalone_file = True
+            self.app_name = as_module.name
         elif (as_module / ".py").is_file():
             self.standalone_file = True
+            self.app_name = as_module.name
 
         if self.standalone_file is None:
             raise Exception("Couldn't determine what to import")
@@ -191,10 +193,9 @@ class AppInfo:
         else:
             self.app_title = self.appdir
         if self.standalone:
-            self.boot = f'import {self.app_title}\nimport os\nos._exit(0)'
+            self.boot = f"import {self.app_title}\nimport os\nos._exit(0)"
         else:
             self.boot = f"import {self.app_title}"
-        
 
         self.abs_root_path = pathlib.Path(".").absolute()
 
@@ -399,8 +400,9 @@ class AppInfo:
             ap2 = set()
             for p in all_paths:
                 for path, _, files in os.walk(p):
-                    if not path.endswith("__pycache__"):
-                        ap2.add(path)
+                    if "__pycache__" in path:
+                        continue
+                    ap2.add(path)
 
             for dir in ap2:
                 for file in pathlib.Path(dir).glob("*"):
