@@ -280,10 +280,12 @@ class AppInfo:
             if lib.endswith(".dll"):
                 shutil.copy(self.path_to_original_libs / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
+                
                 if lib.endswith("_tkinter.pyd"):
                     self.use_tk = True
                 elif lib.endswith("_sqlite3.pyd"):
-                    self.use_sqlite3 = True
+                    self.use_sqlite3 = True               
+                
                 if lib.startswith(str(self.abs_root_path)):
                     target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
                     target_directory = self.build_path / str(target_path.parent.name)
@@ -582,10 +584,6 @@ def main():
     appinfo.add_special_libs()
     appinfo.rename_execs()
     appinfo.make_dist_zipfile()
-
-    # TODO: go through installed libraries and copy out anything
-    # that's not a Python file
-    # e.g., for Numpy
 
     print("Done.")
 
