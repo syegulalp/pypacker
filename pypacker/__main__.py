@@ -280,12 +280,12 @@ class AppInfo:
             if lib.endswith(".dll"):
                 shutil.copy(self.path_to_original_libs / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
-                
+
                 if lib.endswith("_tkinter.pyd"):
                     self.use_tk = True
                 elif lib.endswith("_sqlite3.pyd"):
-                    self.use_sqlite3 = True               
-                
+                    self.use_sqlite3 = True
+
                 if lib.startswith(str(self.abs_root_path)):
                     target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
                     target_directory = self.build_path / str(target_path.parent.name)
@@ -514,9 +514,11 @@ class AppInfo:
     def add_special_libs(self):
 
         if self.use_sqlite3:
-            sqlite_src = pathlib.Path(self.path_to_original_executable, "DLLs", "sqlite3.dll")            
+            sqlite_src = pathlib.Path(
+                self.path_to_original_executable, "DLLs", "sqlite3.dll"
+            )
             shutil.copy(sqlite_src, self.lib_target_path)
-            
+
         if self.use_tk:
             tk_src = pathlib.Path(self.path_to_original_executable, "tcl")
             tk_dest = pathlib.Path(self.build_path, "lib")
