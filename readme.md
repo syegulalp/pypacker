@@ -26,6 +26,8 @@ When your application exits, PyPacker it will generate a `tracefile.json` file t
 
 The resulting redistributable will be placed in the `dist` subdirectory. A zipped version of the redistributable directory is also provided.
 
+Using TKinter and SQLite3 should be automatically detected, and the appropriate files should be copied into your redistributable.
+
 ## What PyPacker tries to do
 
 * The main program tree is turned into a `.zip` file (of `.pyc` files).
