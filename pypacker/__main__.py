@@ -12,9 +12,15 @@ if len(sys.argv) == 1:
 usage: pypacker
     -a <module> -- analyze module
     -v -- for verbose output
+
     -ta -- treeshake application
     -tl -- treeshake libraries    
     -t -- treeshake all (implies -ta and -tl)
+    
+    -tli <libname> -- treeshake library <libname>
+    -tlx <libname> -- exclude library <libname> from treeshaking (implies -tl)
+
+    -tli/tlx can be specified more than once
 """
     )
 
@@ -26,6 +32,21 @@ if verbose:
 
 treeshake_app = "-ta" in sys.argv or "-t" in sys.argv
 treeshake_libs = "-tl" in sys.argv or "-t" in sys.argv
+
+treeshake_exclude = set()
+treeshake_include = set()
+
+for idx, a in enumerate(sys.argv):
+    if a=="-tlx":
+        treeshake_exclude.add(sys.argv[idx+1])
+        treeshake_include = None
+        treeshake_libs = True
+
+for idx, a in enumerate(sys.argv):
+    if a=="-tli":
+        treeshake_include.add(sys.argv[idx+1])
+        treeshake_exclude = None
+        treeshake_libs = True
 
 
 class IniFileMissing(Exception):
@@ -336,6 +357,9 @@ class AppInfo:
 
         all_libs = set()
 
+        # tlx: enable treeshake except for all
+        # tli: enable treeshake but only process libs in question
+
         if treeshake_libs:
 
             print("Treeshaking")
@@ -353,14 +377,34 @@ class AppInfo:
 
             self.pkgzip.close()
 
-            for libpath in all_libs:
+            for libpath in all_libs:                
+                ts = True
+
+                if treeshake_exclude and pathlib.Path(libpath).stem in treeshake_exclude:
+                    ts=False
+                elif treeshake_include:
+                    ts=False
+                    if pathlib.Path(libpath).stem in treeshake_include:
+                        ts=True
+                
                 for path, _, files in os.walk(libpath):
+                    if "__pycache__" in path:
+                        continue
                     for f in files:
+                        if not ts:
+                            fpath = path.replace(str(libpath), "")
+                            outpath = pathlib.Path(libpath).stem
+                            t = (self.build_path, outpath, str(fpath).lstrip("\\"))
+                            target_directory = pathlib.Path(*t)
+                            if not target_directory.exists():
+                                target_directory.mkdir(parents=True)
+                            shutil.copy(pathlib.Path(path, f), target_directory)       
+                            continue
+                        
                         if not f.endswith((".py", ".pyc")):
                             path_parent = pathlib.Path(libpath).parent
                             # XXX
                             ppath = path.replace(str(path_parent) + "\\", "")
-
                             target_directory = pathlib.Path(self.build_path, ppath)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
