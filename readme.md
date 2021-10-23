@@ -28,6 +28,8 @@ The resulting redistributable will be placed in the `dist` subdirectory. A zippe
 
 Using TKinter and SQLite3 should be automatically detected, and the appropriate files should be copied into your redistributable.
 
+Numpy can now also be included, although you cannot use treeshaking with it (use the option `-tlx numpy`).
+
 ## What PyPacker tries to do
 
 * The main program tree is turned into a `.zip` file (of `.pyc` files).
@@ -54,10 +56,12 @@ The following command line options are supported:
 * `-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
 * `-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
 * `-t` -- Shortcut for `-ta` and `-tl`.
+* `-tli <libname>` -- Treeshake library `<libname>` only.
+* `-tlx <libname>` -- Exclude library `<libname>` from treeshaking (implies `-tl`).
 
 ## Caveats
 
-Very buggy. Drastically incomplete. For instance, stuff like NumPy probably doesn't work yet.
+Very buggy. Drastically incomplete.
 
 Treeshaking is highly experimental.
 
