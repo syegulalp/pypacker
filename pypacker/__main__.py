@@ -37,14 +37,14 @@ treeshake_exclude = set()
 treeshake_include = set()
 
 for idx, a in enumerate(sys.argv):
-    if a=="-tlx":
-        treeshake_exclude.add(sys.argv[idx+1])
+    if a == "-tlx":
+        treeshake_exclude.add(sys.argv[idx + 1])
         treeshake_include = None
         treeshake_libs = True
 
 for idx, a in enumerate(sys.argv):
-    if a=="-tli":
-        treeshake_include.add(sys.argv[idx+1])
+    if a == "-tli":
+        treeshake_include.add(sys.argv[idx + 1])
         treeshake_exclude = None
         treeshake_libs = True
 
@@ -304,14 +304,14 @@ class AppInfo:
                 llp = lp.relative_to(vpath)
             except ValueError:
                 pass
-            
+
             if not (self.path_to_original_libs / lib).exists():
                 print(f"\tWarning: {lib} not found")
                 continue
             if lib in self.exclude:
                 vprint("\tExcluding", lib)
                 continue
-            
+
             if lib.endswith(".dll"):
                 shutil.copy(self.path_to_original_libs / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
@@ -322,20 +322,20 @@ class AppInfo:
 
                 # make sure this lib isn't in the installed packages
                 # if so, copy it to the right location
-                
+
                 if llp:
                     target_directory = self.build_path / str(llp.parent)
                     if not target_directory.exists():
                         target_directory.mkdir(parents=True)
                     shutil.copy(lib, target_directory)
-                
+
                 elif lib.startswith(str(self.abs_root_path)):
                     target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
                     target_directory = self.build_path / str(target_path.parent.name)
                     if not target_directory.exists():
                         target_directory.mkdir(parents=True)
                     shutil.copy(lib, target_directory)
-                
+
                 else:
                     shutil.copy(lib, self.lib_target_path)
             else:
@@ -357,9 +357,6 @@ class AppInfo:
 
         all_libs = set()
 
-        # tlx: enable treeshake except for all
-        # tli: enable treeshake but only process libs in question
-
         if treeshake_libs:
 
             print("Treeshaking")
@@ -377,16 +374,19 @@ class AppInfo:
 
             self.pkgzip.close()
 
-            for libpath in all_libs:                
+            for libpath in all_libs:
                 ts = True
 
-                if treeshake_exclude and pathlib.Path(libpath).stem in treeshake_exclude:
-                    ts=False
+                if (
+                    treeshake_exclude
+                    and pathlib.Path(libpath).stem in treeshake_exclude
+                ):
+                    ts = False
                 elif treeshake_include:
-                    ts=False
+                    ts = False
                     if pathlib.Path(libpath).stem in treeshake_include:
-                        ts=True
-                
+                        ts = True
+
                 for path, _, files in os.walk(libpath):
                     if "__pycache__" in path:
                         continue
@@ -398,9 +398,9 @@ class AppInfo:
                             target_directory = pathlib.Path(*t)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
-                            shutil.copy(pathlib.Path(path, f), target_directory)       
+                            shutil.copy(pathlib.Path(path, f), target_directory)
                             continue
-                        
+
                         if not f.endswith((".py", ".pyc")):
                             path_parent = pathlib.Path(libpath).parent
                             # XXX
