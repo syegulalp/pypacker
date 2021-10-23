@@ -125,6 +125,9 @@ with open("{self.app_name}.tmp","w") as f:
         binaries = []
         app_modules = []
 
+        # BUG: lib folder for venv has case sensitivity issues
+        # why?
+
         for m, mn in loaded_modules:
             if mn.endswith(".pyd") or mn.endswith(".dll"):
                 binaries.append(mn)
@@ -270,28 +273,48 @@ class AppInfo:
         self.stdlib.extend(["../DLLS/libffi-7.dll", "encodings/cp437.py"])
         all_libs = set(self.stdlib)
 
+        vpath = pathlib.PureWindowsPath(self.path_to_venv_libs)
+
         for lib in all_libs:
+
+            lp = pathlib.PureWindowsPath(lib)
+            llp = None
+            try:
+                llp = lp.relative_to(vpath)
+            except ValueError:
+                pass
+            
             if not (self.path_to_original_libs / lib).exists():
                 print(f"\tWarning: {lib} not found")
                 continue
             if lib in self.exclude:
                 vprint("\tExcluding", lib)
                 continue
+            
             if lib.endswith(".dll"):
                 shutil.copy(self.path_to_original_libs / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
-
                 if lib.endswith("_tkinter.pyd"):
                     self.use_tk = True
                 elif lib.endswith("_sqlite3.pyd"):
                     self.use_sqlite3 = True
 
-                if lib.startswith(str(self.abs_root_path)):
+                # make sure this lib isn't in the installed packages
+                # if so, copy it to the right location
+                
+                if llp:
+                    target_directory = self.build_path / str(llp.parent)
+                    if not target_directory.exists():
+                        target_directory.mkdir(parents=True)
+                    shutil.copy(lib, target_directory)
+                
+                elif lib.startswith(str(self.abs_root_path)):
                     target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
                     target_directory = self.build_path / str(target_path.parent.name)
                     if not target_directory.exists():
                         target_directory.mkdir(parents=True)
                     shutil.copy(lib, target_directory)
+                
                 else:
                     shutil.copy(lib, self.lib_target_path)
             else:
@@ -337,6 +360,7 @@ class AppInfo:
                             path_parent = pathlib.Path(libpath).parent
                             # XXX
                             ppath = path.replace(str(path_parent) + "\\", "")
+
                             target_directory = pathlib.Path(self.build_path, ppath)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
@@ -352,28 +376,18 @@ class AppInfo:
                 )
 
             for libpath in all_libs:
-
                 for path, _, files in os.walk(libpath):
                     if "__pycache__" in path:
                         continue
                     outpath = pathlib.Path(libpath).stem
                     fpath = path.replace(str(libpath), "")
                     for f in files:
-                        if not f.endswith((".py", ".pyc")):
-                            path_parent = pathlib.Path(libpath).parent
-                            ppath = path.replace(str(path_parent) + "\\", "")
-                            target_directory = pathlib.Path(self.build_path, ppath)
-                        else:
-                            outfile = pathlib.Path(libpath, path, f)
-                            try:
-                                compiled = py_compile.compile(outfile, optimize=2)
-                            except:
-                                continue
-                            else:
-                                self.pkgzip.write(
-                                    compiled,
-                                    pathlib.Path(outpath + fpath, f + "c"),
-                                )
+                        outpath = pathlib.Path(libpath).stem
+                        t = (self.build_path, outpath, str(fpath).lstrip("\\"))
+                        target_directory = pathlib.Path(*t)
+                        if not target_directory.exists():
+                            target_directory.mkdir(parents=True)
+                        shutil.copy(pathlib.Path(path, f), target_directory)
 
             self.pkgzip.close()
 
@@ -521,7 +535,7 @@ class AppInfo:
 
         if self.use_tk:
             tk_src = pathlib.Path(self.path_to_original_executable, "tcl")
-            tk_dest = pathlib.Path(self.build_path, "lib")
+            tk_dest = pathlib.Path(self.build_path, "Lib")
             shutil.copytree(tk_src, tk_dest)
             dll_src = pathlib.Path(self.path_to_original_executable, "DLLs")
             for f in dll_src.glob("t*.dll"):
