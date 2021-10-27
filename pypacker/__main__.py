@@ -5,6 +5,13 @@ import zipfile
 import py_compile
 import os
 import json
+import site
+import subprocess
+
+
+class IniFileMissing(Exception):
+    pass
+
 
 if len(sys.argv) == 1:
     print(
@@ -54,15 +61,12 @@ for idx, a in enumerate(sys.argv):
 
     elif a == "-o":
         try:
-            level = int(sys.argv[idx+1])
+            level = int(sys.argv[idx + 1])
         except ValueError:
-            print ("Invalid optimization level supplied; defaulting to 0")
+            print("Invalid optimization level supplied; defaulting to 0")
         else:
             level = max(0, min(level, 2))
         pyc_opt_level = level
-
-class IniFileMissing(Exception):
-    pass
 
 
 class Analysis:
@@ -132,10 +136,6 @@ with open("{self.app_name}.tmp","w") as f:
         print(
             f"Importing {self.app_name} as {'file' if self.standalone_file else 'module'}"
         )
-
-        import site
-        import json
-        import subprocess
 
         print(f"Starting run for {self.app_name}")
 
@@ -444,8 +444,10 @@ class AppInfo:
                         if not target_directory.exists():
                             target_directory.mkdir(parents=True)
                         if f.endswith(".py"):
-                            outfile = pathlib.Path(target_directory, str(f)+"c")
-                            compiled = py_compile.compile(pathlib.Path(path, f), optimize=pyc_opt_level)
+                            outfile = pathlib.Path(target_directory, str(f) + "c")
+                            compiled = py_compile.compile(
+                                pathlib.Path(path, f), optimize=pyc_opt_level
+                            )
                             shutil.copy(compiled, outfile)
                         else:
                             shutil.copy(pathlib.Path(path, f), target_directory)
@@ -474,7 +476,9 @@ class AppInfo:
                     all_paths.add(path_to_file.parent)
                 if not path_to_file.exists():
                     continue
-                compiled = py_compile.compile(str(path_to_file.absolute()), optimize=pyc_opt_level)
+                compiled = py_compile.compile(
+                    str(path_to_file.absolute()), optimize=pyc_opt_level
+                )
                 self.app_zip.write(compiled, f"{file}c")
 
             ap2 = set()
@@ -542,7 +546,8 @@ class AppInfo:
                             continue
 
                         compiled = py_compile.compile(
-                            str(pathlib.Path(path, file).absolute()), optimize=pyc_opt_level
+                            str(pathlib.Path(path, file).absolute()),
+                            optimize=pyc_opt_level,
                         )
                         self.app_zip.write(compiled, f"{path}\\{file}c")
 
