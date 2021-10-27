@@ -18,6 +18,10 @@ Create a virtual environment for your project. (Optional, but let's face it, you
 
 `pip install` the contents of the repository.
 
+You can also install directly from Github:
+
+`pip install git+https://github.com/syegulalp/pypacker`
+
 Run it like so:
 
 `py -m pypacker -a entry_point.py`
