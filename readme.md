@@ -12,7 +12,7 @@ The downside of this approach is that you have to perform at least one run with 
 
 The upside is that PyPacker knows exactly what to copy. Also, your trace files can be reused as long as no new program components have been added in the meantime. And because the unmodified Python runtime is included, this minimizes the chances your package will be flagged as malware.
 
-## Usage
+## Installation
 
 Create a virtual environment for your project. (Optional, but let's face it, you should do this anyway.)
 
@@ -22,7 +22,9 @@ You can also install directly from Github:
 
 `pip install git+https://github.com/syegulalp/pypacker`
 
-Run it like so:
+## Usage
+
+Run PyPacker like so:
 
 `py -m pypacker -a entry_point.py`
 
