@@ -18,6 +18,7 @@ if len(sys.argv) == 1:
         """
 usage: pypacker
     -a <module> -- analyze module
+    -f <function> -- function to run in module for entry point
     -v -- for verbose output
 
     -ta -- treeshake application
@@ -48,6 +49,8 @@ treeshake_include = set()
 
 pyc_opt_level = 0
 
+entry_function = None
+
 for idx, a in enumerate(sys.argv):
     if a == "-tlx":
         treeshake_exclude.add(sys.argv[idx + 1])
@@ -68,6 +71,8 @@ for idx, a in enumerate(sys.argv):
             level = max(0, min(level, 2))
         pyc_opt_level = level
 
+    elif a == "-f":
+        entry_function = sys.argv[idx+1]
 
 class Analysis:
     def __init__(self, app_name):
@@ -75,9 +80,13 @@ class Analysis:
         self.analyze()
 
     def generate_analysis_script(self):
+        app_exec = f"import {self.app_name}"
+        if entry_function:
+            app_exec += f"\n    {self.app_name}.{entry_function}()"
+        
         temp = f"""
 try:
-    import {self.app_name}
+    {app_exec}
 except BaseException:
     pass
 
@@ -125,10 +134,7 @@ with open("{self.app_name}.tmp","w") as f:
             self.standalone_file = False
         elif as_module.is_file():
             self.standalone_file = True
-            self.app_name = as_module.name
-        elif (as_module / ".py").is_file():
-            self.standalone_file = True
-            self.app_name = as_module.name
+            self.app_name = as_module.stem
 
         if self.standalone_file is None:
             raise Exception("Couldn't determine what to import")
@@ -176,8 +182,8 @@ with open("{self.app_name}.tmp","w") as f:
                         t = mn.replace(f"{root_app_dir}\\", "")
                         app_modules.append(t)
 
-        self.delete_tempdata()
-        self.delete_analysis_script()
+        # self.delete_tempdata()
+        # self.delete_analysis_script()
 
         output = {
             "app": self.app_name,
@@ -188,6 +194,7 @@ with open("{self.app_name}.tmp","w") as f:
             "copy": [],
             "exclude": [],
             "app_exclude": [],
+            "entry_function": entry_function
         }
 
         # TODO:
