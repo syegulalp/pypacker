@@ -24,6 +24,8 @@ You can also install directly from Github:
 
 ## Usage
 
+### 1. Run application
+
 Run PyPacker like so:
 
 `py -m pypacker -a entry_point.py`
@@ -33,20 +35,17 @@ where `entry_point.py` is the entry point to your application.
 * If just importing `entry_point.py` starts your application, PyPacker will detect that.
 * However, if `entry_point.py` has an `if __name__ == "__main__": main()` guard, or something similar, use `-f <function>` to specify the name of a function to run after the import and start the application.
 
+### 2. Generate coverage analysis
+
 When your application launches, make sure you use as much of its functionality as possible, to generate the maximum possible analysis coverage.
 
-When your application exits, PyPacker it will generate a `tracefile.json` file that can be re-used for future runs (by just typing `py -m pypacker` in that directory). It will then package your application for redistribution.
+When your application exits, PyPacker it will generate a `tracefile.json` file that can be re-used for future runs (by just typing `py -m pypacker` in that directory).
+
+### 3. Pack app for redistribution
+
+After either running a new analysis or reading in an existing one, PyPacker will package your application for redistribution.
 
 The resulting redistributable will be placed in the `dist` subdirectory. A zipped version of the redistributable directory is also provided.
-
-Note that PyPacker works best with a program structure like this:
-
-```
-entrypoint.py
-    \ appdir
-```
-
-where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
 
 ## What PyPacker tries to do
 
@@ -57,6 +56,18 @@ where `entrypoint.py` is what's executed to start your app, and your actual app 
 * Both console and windowed executables are provided.
 * Using TKinter and SQLite3 should be automatically detected, and the appropriate files should be copied into your redistributable.
 * Numpy can now also be included, although you cannot use treeshaking with it (use the option `-tlx numpy`).
+
+## Recommendations
+
+PyPacker works best with a program structure like this:
+
+```
+entrypoint.py
+    \ appdir
+```
+
+where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
+
 
 ## Options
 
