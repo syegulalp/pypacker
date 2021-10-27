@@ -33,7 +33,7 @@ Run PyPacker like so:
 where `entry_point.py` is the entry point to your application.
 
 * If just importing `entry_point.py` starts your application, PyPacker will detect that.
-* However, if `entry_point.py` has an `if __name__ == "__main__": main()` guard, or something similar, use `-f <function>` to specify the name of a function to run after the import and start the application.
+* However, if `entry_point.py` has an `if __name__ == "__main__": main()` guard, or something similar, it will not work (yet).
 
 ### 2. Generate coverage analysis
 
@@ -74,7 +74,6 @@ where `entrypoint.py` is what's executed to start your app, and your actual app 
 The following command line options are supported:
 
 * `-a` -- Specify an entry point for analysis. Not needed if you're re-using a previously generated analysis.
-* `-f <function>` -- Function to run in module for entry point.
 * `-v` -- Verbose output.
 
 ### Advanced options

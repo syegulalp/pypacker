@@ -86,7 +86,7 @@ class Analysis:
         
         temp = f"""
 try:
-    {app_exec}
+    import {self.app_import_name}
 except BaseException:
     pass
 
@@ -130,11 +130,13 @@ with open("{self.app_name}.tmp","w") as f:
 
         print("Looking for", as_module.absolute())
 
+        self.app_import_name = self.app_name
+
         if as_module.is_dir():
             self.standalone_file = False
         elif as_module.is_file():
             self.standalone_file = True
-            self.app_name = as_module.stem
+            self.app_import_name = as_module.stem
 
         if self.standalone_file is None:
             raise Exception("Couldn't determine what to import")
