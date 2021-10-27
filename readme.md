@@ -10,9 +10,13 @@ PyPacker runs the program and makes a record of all the imports actually used du
 
 The downside of this approach is that you have to perform at least one run with the program that provides the broadest possible program coverage -- e.g., all imports are fully executed, etc.
 
-The upside is that PyPacker knows exactly what to copy. Also, your trace files can be reused as long as no new program components have been added in the meantime.
+The upside is that PyPacker knows exactly what to copy. Also, your trace files can be reused as long as no new program components have been added in the meantime. And because the unmodified Python runtime is included, this minimizes the chances your package will be flagged as malware.
 
 ## Usage
+
+Create a virtual environment for your project. (Optional, but let's face it, you should do this anyway.)
+
+`pip install` the contents of the repository.
 
 Run it like so:
 
@@ -26,18 +30,6 @@ When your application exits, PyPacker it will generate a `tracefile.json` file t
 
 The resulting redistributable will be placed in the `dist` subdirectory. A zipped version of the redistributable directory is also provided.
 
-Using TKinter and SQLite3 should be automatically detected, and the appropriate files should be copied into your redistributable.
-
-Numpy can now also be included, although you cannot use treeshaking with it (use the option `-tlx numpy`).
-
-## What PyPacker tries to do
-
-* The main program tree is turned into a `.zip` file (of `.pyc` files).
-* Any non-Python files in the main program tree are copied into a parallel directory off the root of the `dist` directory.
-* Usage of `.pyd` files and (some) `.dll`s are automatically detected as well and copied.
-* Third-party packages are also included.
-* Both console and windowed executables are provided.
-
 Note that PyPacker works best with a program structure like this:
 
 ```
@@ -46,6 +38,16 @@ entrypoint.py
 ```
 
 where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
+
+## What PyPacker tries to do
+
+* The main program tree is turned into a `.zip` file (of `.pyc` files).
+* Any non-Python files in the main program tree are copied into a parallel directory off the root of the `dist` directory.
+* Usage of `.pyd` files and (some) `.dll`s are automatically detected as well and copied.
+* Third-party packages are also included.
+* Both console and windowed executables are provided.
+* Using TKinter and SQLite3 should be automatically detected, and the appropriate files should be copied into your redistributable.
+* Numpy can now also be included, although you cannot use treeshaking with it (use the option `-tlx numpy`).
 
 ## Options
 
