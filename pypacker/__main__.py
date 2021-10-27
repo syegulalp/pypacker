@@ -21,6 +21,9 @@ usage: pypacker
     -tlx <libname> -- exclude library <libname> from treeshaking (implies -tl)
 
     -tli/tlx can be specified more than once
+
+    -o [1/2] -- specify optimization level for .pyc files, default is 0
+    (some modules will object if you remove docstrings)
 """
     )
 
@@ -36,18 +39,27 @@ treeshake_libs = "-tl" in sys.argv or "-t" in sys.argv
 treeshake_exclude = set()
 treeshake_include = set()
 
+pyc_opt_level = 0
+
 for idx, a in enumerate(sys.argv):
     if a == "-tlx":
         treeshake_exclude.add(sys.argv[idx + 1])
         treeshake_include = None
         treeshake_libs = True
 
-for idx, a in enumerate(sys.argv):
-    if a == "-tli":
+    elif a == "-tli":
         treeshake_include.add(sys.argv[idx + 1])
         treeshake_exclude = None
         treeshake_libs = True
 
+    elif a == "-o":
+        try:
+            level = int(sys.argv[idx+1])
+        except ValueError:
+            print ("Invalid optimization level supplied; defaulting to 0")
+        else:
+            level = max(0, min(level, 2))
+        pyc_opt_level = level
 
 class IniFileMissing(Exception):
     pass
@@ -340,7 +352,7 @@ class AppInfo:
                     shutil.copy(lib, self.lib_target_path)
             else:
                 compiled = py_compile.compile(
-                    self.path_to_original_libs / lib, optimize=2
+                    self.path_to_original_libs / lib, optimize=pyc_opt_level
                 )
                 self.stdlib_zip.write(
                     compiled,
@@ -366,7 +378,7 @@ class AppInfo:
                     pathlib.Path(self.path_to_venv_libs, file.split("\\", 1)[0])
                 )
                 outfile = pathlib.Path(self.path_to_venv_libs, file)
-                compiled = py_compile.compile(outfile, optimize=2)
+                compiled = py_compile.compile(outfile, optimize=pyc_opt_level)
                 self.pkgzip.write(
                     compiled,
                     pathlib.Path(file + "c"),
@@ -431,7 +443,12 @@ class AppInfo:
                         target_directory = pathlib.Path(*t)
                         if not target_directory.exists():
                             target_directory.mkdir(parents=True)
-                        shutil.copy(pathlib.Path(path, f), target_directory)
+                        if f.endswith(".py"):
+                            outfile = pathlib.Path(target_directory, str(f)+"c")
+                            compiled = py_compile.compile(pathlib.Path(path, f), optimize=pyc_opt_level)
+                            shutil.copy(compiled, outfile)
+                        else:
+                            shutil.copy(pathlib.Path(path, f), target_directory)
 
             self.pkgzip.close()
 
@@ -457,7 +474,7 @@ class AppInfo:
                     all_paths.add(path_to_file.parent)
                 if not path_to_file.exists():
                     continue
-                compiled = py_compile.compile(str(path_to_file.absolute()), optimize=2)
+                compiled = py_compile.compile(str(path_to_file.absolute()), optimize=pyc_opt_level)
                 self.app_zip.write(compiled, f"{file}c")
 
             ap2 = set()
@@ -508,7 +525,7 @@ class AppInfo:
 
             for f in toplevel:
                 compiled = py_compile.compile(
-                    str(pathlib.Path(f).absolute()), optimize=2
+                    str(pathlib.Path(f).absolute()), optimize=pyc_opt_level
                 )
                 self.app_zip.write(compiled, f"{f}c")
 
@@ -525,7 +542,7 @@ class AppInfo:
                             continue
 
                         compiled = py_compile.compile(
-                            str(pathlib.Path(path, file).absolute()), optimize=2
+                            str(pathlib.Path(path, file).absolute()), optimize=pyc_opt_level
                         )
                         self.app_zip.write(compiled, f"{path}\\{file}c")
 

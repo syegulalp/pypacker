@@ -61,12 +61,17 @@ The following command line options are supported:
 
 * `-a` -- Specify an entry point for analysis. Not needed if you're re-using a previously generated analysis.
 * `-v` -- Verbose output.
+
+### Advanced options
+
+These options provide more compact output, but at the risk of the program not working correctly.
+
 * `-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
 * `-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
 * `-t` -- Shortcut for `-ta` and `-tl`.
 * `-tli <libname>` -- Treeshake library `<libname>` only.
 * `-tlx <libname>` -- Exclude library `<libname>` from treeshaking (implies `-tl`).
-
+* `-o [1/2]` -- Specify optimization level for .pyc files, default is 0. (Some modules, such as NumPy, will object if you remove docstrings by way of optimization level 2.)
 ## Caveats
 
 Very buggy. Drastically incomplete.
