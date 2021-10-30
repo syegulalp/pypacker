@@ -75,6 +75,7 @@ The following command line options are supported:
 
 * `-a` -- Specify an entry point for analysis. Not needed if you're re-using a previously generated analysis.
 * `-v` -- Verbose output.
+* `-ax` -- Retain temporary files after completion of analysis. These are typically deleted automatically, but they can be saved for troubleshooting.
 
 ### Advanced options
 

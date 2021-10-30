@@ -43,6 +43,7 @@ if verbose:
 
 treeshake_app = "-ta" in sys.argv or "-t" in sys.argv
 treeshake_libs = "-tl" in sys.argv or "-t" in sys.argv
+retain_analysis = "-ax" in sys.argv
 
 treeshake_exclude = set()
 treeshake_include = set()
@@ -184,8 +185,9 @@ with open("{self.app_name}.tmp","w") as f:
                         t = mn.replace(f"{root_app_dir}\\", "")
                         app_modules.append(t)
 
-        # self.delete_tempdata()
-        # self.delete_analysis_script()
+        if not retain_analysis:
+            self.delete_tempdata()
+            self.delete_analysis_script()
 
         output = {
             "app": self.app_name,
@@ -312,7 +314,7 @@ class AppInfo:
         )
 
         self.stdlib.extend(self.binaries)
-        self.stdlib.extend(["../DLLS/libffi-7.dll", "encodings/cp437.py"])
+        self.stdlib.extend(["../DLLS/libffi-7.dll", "../DLLS/libffi-8.dll", "encodings/cp437.py"])
         all_libs = set(self.stdlib)
 
         vpath = pathlib.PureWindowsPath(self.path_to_venv_libs)
