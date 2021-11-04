@@ -68,6 +68,7 @@ entrypoint.py
 
 where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
 
+Start by using only `-a` to specify which file to analyze, and no other options. If your program seems stable, rerun without `-a` (unless you've made changes) and try applying optimizations and then treeshaking.
 
 ## Options
 
