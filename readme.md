@@ -20,7 +20,7 @@ Create a virtual environment for your project. (Optional, but let's face it, you
 
 You can also install directly from Github:
 
-`pip install git+https://github.com/syegulalp/pypacker`
+`pip install -U git+https://github.com/syegulalp/pypacker`
 
 ## Usage
 
