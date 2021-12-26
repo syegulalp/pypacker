@@ -73,7 +73,8 @@ for idx, a in enumerate(sys.argv):
         pyc_opt_level = level
 
     elif a == "-f":
-        entry_function = sys.argv[idx+1]
+        entry_function = sys.argv[idx + 1]
+
 
 class Analysis:
     def __init__(self, app_name):
@@ -84,7 +85,7 @@ class Analysis:
         app_exec = f"import {self.app_name}"
         if entry_function:
             app_exec += f"\n    {self.app_name}.{entry_function}()"
-        
+
         temp = f"""
 try:
     import {self.app_import_name}
@@ -198,7 +199,7 @@ with open("{self.app_name}.tmp","w") as f:
             "copy": [],
             "exclude": [],
             "app_exclude": [],
-            "entry_function": entry_function
+            "entry_function": entry_function,
         }
 
         # TODO:
@@ -314,7 +315,21 @@ class AppInfo:
         )
 
         self.stdlib.extend(self.binaries)
-        self.stdlib.extend(["../DLLS/libffi-7.dll", "../DLLS/libffi-8.dll", "encodings/cp437.py"])
+        self.stdlib.extend(
+            [
+                str(
+                    pathlib.Path(
+                        self.path_to_original_executable, "DLLS", "libffi-7.dll"
+                    )
+                ),
+                str(
+                    pathlib.Path(
+                        self.path_to_original_executable, "DLLS", "libffi-8.dll"
+                    )
+                ),
+                "encodings/cp437.py",
+            ]
+        )
         all_libs = set(self.stdlib)
 
         vpath = pathlib.PureWindowsPath(self.path_to_venv_libs)
