@@ -32,6 +32,8 @@ usage: pypacker
 
     -o [1/2] -- specify optimization level for .pyc files, default is 0
     (some modules will object if you remove docstrings)
+
+    -ax -- retain analysis scripts (for debugging)
 """
     )
 
@@ -82,13 +84,16 @@ class Analysis:
         self.analyze()
 
     def generate_analysis_script(self):
-        app_exec = f"import {self.app_name}"
+        self.app_exec = [f"import {self.app_import_name}"]
+        print("E:", entry_function)
         if entry_function:
-            app_exec += f"\n    {self.app_name}.{entry_function}()"
+            self.app_exec.append(f"{self.app_import_name}.{entry_function}()")
+
+        app_exec_temp = "\n    ".join(self.app_exec)
 
         temp = f"""
 try:
-    import {self.app_import_name}
+    {app_exec_temp}
 except BaseException:
     pass
 
@@ -192,6 +197,7 @@ with open("{self.app_name}.tmp","w") as f:
 
         output = {
             "app": self.app_name,
+            "app_exec": self.app_exec,
             "std_lib": sorted(set(std_lib)),
             "app_lib": sorted(set(app_lib)),
             "app_modules": sorted(set(app_modules)),
@@ -241,15 +247,12 @@ class AppInfo:
             self.standalone = True
         else:
             self.app_title = self.appdir
-        if self.standalone:
-            self.boot = f"import {self.app_title}\nimport os\nos._exit(0)"
-        else:
-            self.boot = f"import {self.app_title}"
 
         self.abs_root_path = pathlib.Path(".").absolute()
 
         self.stdlib = config_file["std_lib"]
         self.app_lib = config_file["app_lib"]
+        self.app_exec = config_file["app_exec"]
         self.app_modules = config_file["app_modules"]
         self.lib_dirs = config_file.get("lib_dirs", [])
         self.binaries = config_file.get("binaries", [])
@@ -257,6 +260,12 @@ class AppInfo:
         self.copy_files = set(config_file.get("copy", []))
         self.exclude = set(config_file.get("exclude", []))
         self.app_exclude = set(config_file.get("app_exclude", []))
+
+        app_exec = "\n".join(self.app_exec)
+        if self.standalone:
+            self.boot = f"{app_exec}\nimport os\nos._exit(0)"
+        else:
+            self.boot = app_exec
 
     def create_dirs(self):
 
