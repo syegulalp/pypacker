@@ -51,6 +51,10 @@ After either running a new analysis or reading in an existing one, PyPacker will
 
 The resulting redistributable will be placed in the `dist` subdirectory. A zipped version of the redistributable directory is also provided.
 
+### 4. Repack application on future runs
+
+If you want to make changes to the app that don't impact its analysis (e.g., no new imports), you can just run `py -m pypacker` (along with any needed command-line switches described below) on the directory with the `tracefile.json` file to repack the app.
+
 ## What PyPacker tries to do
 
 * The main program tree is turned into a `.zip` file (of `.pyc` files).
