@@ -187,9 +187,13 @@ with open("{self.app_name}.tmp","w") as f:
                     if mn.startswith(p + "\\"):
                         t = mn.replace(p + "\\", "")
                         app_lib.append(t)
+                    # TODO: add search for root Python libdir
                     else:
-                        t = mn.replace(f"{root_app_dir}\\", "")
-                        app_modules.append(t)
+                        # clumsy shim for avoiding problems like with PDM
+                        # fix this eventually
+                        if str(root_app_dir) in mn:
+                            t = mn.replace(f"{root_app_dir}\\", "")
+                            app_modules.append(t)
 
         if not retain_analysis:
             self.delete_tempdata()
