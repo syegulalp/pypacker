@@ -37,7 +37,7 @@ Run PyPacker like so:
 where `entry_point.py` is the entry point to your application.
 
 * If just importing `entry_point.py` starts your application, PyPacker will detect that.
-* However, if `entry_point.py` has an `if __name__ == "__main__": main()` guard, or something similar, it will not work (yet).
+* However, if `entry_point.py` has an `if __name__ == "__main__": main()` guard, or something similar, use the `-f` switch to indicate what function to use as the entry point. E.g., for `main()`, use `-f main`.
 
 ### 2. Generate coverage analysis
 
