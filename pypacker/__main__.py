@@ -54,6 +54,11 @@ pyc_opt_level = 0
 
 entry_function = None
 
+PY_VERSION = f"python{sys.version_info[0]}{sys.version_info[1]}"
+PATH_TO_ORIGINAL_EXECUTABLE = pathlib.Path(sys.base_prefix)
+PATH_TO_ORIGINAL_LIBS = PATH_TO_ORIGINAL_EXECUTABLE / "Lib"
+PATH_TO_VENV_LIBS = pathlib.Path(sys.prefix, "Lib", "site-packages")
+
 for idx, a in enumerate(sys.argv):
     if a == "-tlx":
         treeshake_exclude.add(sys.argv[idx + 1])
@@ -76,7 +81,6 @@ for idx, a in enumerate(sys.argv):
 
     elif a == "-f":
         entry_function = sys.argv[idx + 1]
-
 
 class Analysis:
     def __init__(self, app_name):
@@ -187,10 +191,10 @@ with open("{self.app_name}.tmp","w") as f:
                     if mn.startswith(p + "\\"):
                         t = mn.replace(p + "\\", "")
                         app_lib.append(t)
-                    # TODO: add search for root Python libdir
+                    elif mn.startswith(f"{PATH_TO_ORIGINAL_LIBS}\\"):
+                        t = mn.replace(f"{PATH_TO_ORIGINAL_LIBS}\\", "")
+                        app_modules.append(t)
                     else:
-                        # clumsy shim for avoiding problems like with PDM
-                        # fix this eventually
                         if str(root_app_dir) in mn:
                             t = mn.replace(f"{root_app_dir}\\", "")
                             app_modules.append(t)
@@ -228,7 +232,7 @@ with open("{self.app_name}.tmp","w") as f:
 class AppInfo:
     def __init__(self, config_file=None):
 
-        self.py_version = f"python{sys.version_info[0]}{sys.version_info[1]}"
+
 
         if config_file is None:
             self.setup_no_config()
@@ -273,9 +277,7 @@ class AppInfo:
 
     def create_dirs(self):
 
-        self.path_to_original_executable = pathlib.Path(sys.base_prefix)
-        self.path_to_original_libs = self.path_to_original_executable / "Lib"
-        self.path_to_venv_libs = pathlib.Path(sys.prefix, "Lib", "site-packages")
+
         self.build_path = pathlib.Path("dist")
 
         print(f"Creating build directory {self.build_path}")
@@ -293,11 +295,11 @@ class AppInfo:
 
         print("Copying base files")
 
-        base_files = ["python.exe", "pythonw.exe", f"{self.py_version}.dll"]
+        base_files = ["python.exe", "pythonw.exe", f"{PY_VERSION}.dll"]
 
         for file in base_files:
             shutil.copy(
-                pathlib.Path(self.path_to_original_executable, file), self.build_path
+                pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, file), self.build_path
             )
 
         target_path_for_base_files = self.lib_target_path.parts[-1]
@@ -305,14 +307,14 @@ class AppInfo:
         output = [
             ".",
             f"{target_path_for_base_files}",
-            f"{target_path_for_base_files}\\{self.py_version}.zip",
+            f"{target_path_for_base_files}\\{PY_VERSION}.zip",
             f"{target_path_for_base_files}\\pkg.zip",
             f"{target_path_for_base_files}\\app.zip",
             "",
             "import site",
         ]
 
-        with open(self.build_path / f"{self.py_version}._pth", "w") as f:
+        with open(self.build_path / f"{PY_VERSION}._pth", "w") as f:
             for line in output:
                 f.write(line)
                 f.write("\n")
@@ -322,7 +324,7 @@ class AppInfo:
         print("Creating stdlib archive")
 
         self.stdlib_zip = zipfile.ZipFile(
-            self.lib_target_path / f"{self.py_version}.zip",
+            self.lib_target_path / f"{PY_VERSION}.zip",
             mode="w",
             compression=zipfile.ZIP_DEFLATED,
         )
@@ -332,12 +334,12 @@ class AppInfo:
             [
                 str(
                     pathlib.Path(
-                        self.path_to_original_executable, "DLLS", "libffi-7.dll"
+                        PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-7.dll"
                     )
                 ),
                 str(
                     pathlib.Path(
-                        self.path_to_original_executable, "DLLS", "libffi-8.dll"
+                        PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-8.dll"
                     )
                 ),
                 "encodings/cp437.py",
@@ -345,7 +347,7 @@ class AppInfo:
         )
         all_libs = set(self.stdlib)
 
-        vpath = pathlib.PureWindowsPath(self.path_to_venv_libs)
+        vpath = pathlib.PureWindowsPath(PATH_TO_VENV_LIBS)
 
         for lib in all_libs:
 
@@ -356,7 +358,7 @@ class AppInfo:
             except ValueError:
                 pass
 
-            if not (self.path_to_original_libs / lib).exists():
+            if not (PATH_TO_ORIGINAL_LIBS / lib).exists():
                 print(f"\tWarning: {lib} not found")
                 continue
             if lib in self.exclude:
@@ -364,7 +366,7 @@ class AppInfo:
                 continue
 
             if lib.endswith(".dll"):
-                shutil.copy(self.path_to_original_libs / lib, self.lib_target_path)
+                shutil.copy(PATH_TO_ORIGINAL_LIBS / lib, self.lib_target_path)
             elif lib.endswith(".pyd"):
                 if lib.endswith("_tkinter.pyd"):
                     self.use_tk = True
@@ -391,7 +393,7 @@ class AppInfo:
                     shutil.copy(lib, self.lib_target_path)
             else:
                 compiled = py_compile.compile(
-                    self.path_to_original_libs / lib, optimize=pyc_opt_level
+                    PATH_TO_ORIGINAL_LIBS / lib, optimize=pyc_opt_level
                 )
                 self.stdlib_zip.write(
                     compiled,
@@ -414,9 +416,9 @@ class AppInfo:
 
             for file in self.app_lib:
                 all_libs.add(
-                    pathlib.Path(self.path_to_venv_libs, file.split("\\", 1)[0])
+                    pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0])
                 )
-                outfile = pathlib.Path(self.path_to_venv_libs, file)
+                outfile = pathlib.Path(PATH_TO_VENV_LIBS, file)
                 compiled = py_compile.compile(outfile, optimize=pyc_opt_level)
                 self.pkgzip.write(
                     compiled,
@@ -467,7 +469,7 @@ class AppInfo:
 
             for file in self.app_lib:
                 all_libs.add(
-                    pathlib.Path(self.path_to_venv_libs, file.split("\\", 1)[0])
+                    pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0])
                 )
 
             for libpath in all_libs:
@@ -634,15 +636,15 @@ class AppInfo:
 
         if self.use_sqlite3:
             sqlite_src = pathlib.Path(
-                self.path_to_original_executable, "DLLs", "sqlite3.dll"
+                PATH_TO_ORIGINAL_EXECUTABLE, "DLLs", "sqlite3.dll"
             )
             shutil.copy(sqlite_src, self.lib_target_path)
 
         if self.use_tk:
-            tk_src = pathlib.Path(self.path_to_original_executable, "tcl")
+            tk_src = pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "tcl")
             tk_dest = pathlib.Path(self.build_path, "Lib")
             shutil.copytree(tk_src, tk_dest)
-            dll_src = pathlib.Path(self.path_to_original_executable, "DLLs")
+            dll_src = pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLs")
             for f in dll_src.glob("t*.dll"):
                 shutil.copy(f, self.lib_target_path)
             unneeded_lib = tk_dest.glob("*.lib")
