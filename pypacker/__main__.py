@@ -82,6 +82,7 @@ for idx, a in enumerate(sys.argv):
     elif a == "-f":
         entry_function = sys.argv[idx + 1]
 
+
 class Analysis:
     def __init__(self, app_name):
         self.app_name = app_name
@@ -232,8 +233,6 @@ with open("{self.app_name}.tmp","w") as f:
 class AppInfo:
     def __init__(self, config_file=None):
 
-
-
         if config_file is None:
             self.setup_no_config()
         else:
@@ -276,7 +275,6 @@ class AppInfo:
             self.boot = app_exec
 
     def create_dirs(self):
-
 
         self.build_path = pathlib.Path("dist")
 
@@ -332,16 +330,8 @@ class AppInfo:
         self.stdlib.extend(self.binaries)
         self.stdlib.extend(
             [
-                str(
-                    pathlib.Path(
-                        PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-7.dll"
-                    )
-                ),
-                str(
-                    pathlib.Path(
-                        PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-8.dll"
-                    )
-                ),
+                str(pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-7.dll")),
+                str(pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-8.dll")),
                 "encodings/cp437.py",
             ]
         )
@@ -415,9 +405,7 @@ class AppInfo:
             print("Treeshaking")
 
             for file in self.app_lib:
-                all_libs.add(
-                    pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0])
-                )
+                all_libs.add(pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
                 outfile = pathlib.Path(PATH_TO_VENV_LIBS, file)
                 compiled = py_compile.compile(outfile, optimize=pyc_opt_level)
                 self.pkgzip.write(
@@ -468,9 +456,7 @@ class AppInfo:
             print("All libs")
 
             for file in self.app_lib:
-                all_libs.add(
-                    pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0])
-                )
+                all_libs.add(pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
 
             for libpath in all_libs:
                 for path, _, files in os.walk(libpath):
