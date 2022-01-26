@@ -67,6 +67,8 @@ If you want to make changes to the app that don't impact its analysis (e.g., no 
 
 ## Recommendations
 
+### Project structure
+
 PyPacker works best with a program structure like this:
 
 ```
@@ -76,7 +78,11 @@ entrypoint.py
 
 where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
 
-Start by using only `-a` to specify which file to analyze (along with `-f` if needed), and no other options. If your program seems stable, rerun without `-a` (unless you've made changes) and try applying optimizations and then treeshaking.
+### Optimization process
+
+Start by using only `-a` to specify which file to analyze, along with `-f` if needed, *and no other options*. This creates the most baseline package possible.
+
+If your program seems stable, rerun without `-a`/`-f` (unless you've made changes) and try applying optimizations and then treeshaking.
 
 ## Options
 
@@ -91,6 +97,8 @@ The following command line options are supported:
 
 These options provide more compact output, but at the risk of the program not working correctly.
 
+* `-c` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once.
+* `-od` -- Specify output directory for build artifact. Default is `dist` in the current working directory.
 * `-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
 * `-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
 * `-t` -- Shortcut for `-ta` and `-tl`.
