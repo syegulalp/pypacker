@@ -97,7 +97,6 @@ The following command line options are supported:
 
 These options provide more compact output, but at the risk of the program not working correctly.
 
-* `-c` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once.
 * `-od` -- Specify output directory for build artifact. Default is `dist` in the current working directory.
 * `-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
 * `-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
@@ -105,6 +104,7 @@ These options provide more compact output, but at the risk of the program not wo
 * `-tli <libname>` -- Treeshake library `<libname>` only.
 * `-tlx <libname>` -- Exclude library `<libname>` from treeshaking (implies `-tl`).
 * `-o [1/2]` -- Specify optimization level for .pyc files, default is 0. (Some modules, such as NumPy, will object if you remove docstrings by way of optimization level 2.)
+* `-c` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once. Pypacker will make a best effort to reproduce the layout of the files in the distribution folder based on its relative position to the entry point. (Note that you generally do not need to specify this option for non-code files adjacent to code in a project subdirectory, since they will be copied by default in an attempt to preserve the original layout.)
 ## Caveats
 
 Very buggy. Drastically incomplete.
