@@ -29,6 +29,10 @@ This is an example of a single Python script that depends on at least one other 
 
 # Sample TKinter application (`tkinter`)
 
+An example of a single-file TKinter application.
+
+## Build instructions
+
 1. In the `tkinter` directory, run `py -m pypacker -a hello.py`.
 2. The program will run; close the TKinter window that pops up to close it and finish the build process.
 3. The `dist` directory will contain the executable; the `hello.zip` bundle will contain a `.zip` of that directory.
