@@ -78,6 +78,8 @@ entrypoint.py
 
 where `entrypoint.py` is what's executed to start your app, and your actual app and all its files live in `appdir` and below. This makes it easier for PyPacker to detect data files that are adjacent to your application.
 
+The `examples` directory in the repository contains some sample project layouts that you can study.
+
 ### Optimization process
 
 Start by using only `-a` to specify which file to analyze, along with `-f` if needed, *and no other options*. This creates the most baseline package possible.
@@ -104,7 +106,7 @@ These options provide more compact output, but at the risk of the program not wo
 * `-tli <libname>` -- Treeshake library `<libname>` only.
 * `-tlx <libname>` -- Exclude library `<libname>` from treeshaking (implies `-tl`).
 * `-o [1/2]` -- Specify optimization level for .pyc files, default is 0. (Some modules, such as NumPy, will object if you remove docstrings by way of optimization level 2.)
-* `-c` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once. Pypacker will make a best effort to reproduce the layout of the files in the distribution folder based on its relative position to the entry point. (Note that you generally do not need to specify this option for non-code files adjacent to code in a project subdirectory, since they will be copied by default in an attempt to preserve the original layout.)
+* `-cp` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once. Pypacker will make a best effort to reproduce the layout of the files in the distribution folder based on its relative position to the entry point. (Note that you generally do not need to specify this option for non-code files adjacent to code in a project subdirectory, since they will be copied by default in an attempt to preserve the original layout.)
 ## Caveats
 
 Very buggy. Drastically incomplete.
