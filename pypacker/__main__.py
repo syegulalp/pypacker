@@ -28,6 +28,8 @@ usage: pypacker
     -tli <libname> -- treeshake library <libname>
     -tlx <libname> -- exclude library <libname> from treeshaking (implies -tl)
 
+    -cp <wildcard> -- copy in files matching a given glob wildcard
+
     -tli/tlx can be specified more than once
 
     -o [1/2] -- specify optimization level for .pyc files, default is 0
@@ -53,11 +55,14 @@ treeshake_include = set()
 pyc_opt_level = 0
 
 entry_function = None
+build_artifact_dir = "dist"
 
 PY_VERSION = f"python{sys.version_info[0]}{sys.version_info[1]}"
 PATH_TO_ORIGINAL_EXECUTABLE = pathlib.Path(sys.base_prefix)
 PATH_TO_ORIGINAL_LIBS = PATH_TO_ORIGINAL_EXECUTABLE / "Lib"
 PATH_TO_VENV_LIBS = pathlib.Path(sys.prefix, "Lib", "site-packages")
+
+copy_files_cmdline = []
 
 for idx, a in enumerate(sys.argv):
     if a == "-tlx":
@@ -81,6 +86,12 @@ for idx, a in enumerate(sys.argv):
 
     elif a == "-f":
         entry_function = sys.argv[idx + 1]
+
+    elif a == "-od":
+        build_artifact_dir = sys.argv[idx + 1]
+
+    elif a == "-cp":
+        copy_files_cmdline.append([sys.argv[idx + 1],'.'])
 
 
 class Analysis:
@@ -211,7 +222,7 @@ with open("{self.app_name}.tmp","w") as f:
             "app_lib": sorted(set(app_lib)),
             "app_modules": sorted(set(app_modules)),
             "binaries": sorted(set(binaries)),
-            "copy": [],
+            "copy": copy_files_cmdline,
             "exclude": [],
             "app_exclude": [],
             "entry_function": entry_function,
@@ -264,7 +275,7 @@ class AppInfo:
         self.lib_dirs = config_file.get("lib_dirs", [])
         self.binaries = config_file.get("binaries", [])
 
-        self.copy_files = set(config_file.get("copy", []))
+        self.copy_files = config_file.get("copy", [])
         self.exclude = set(config_file.get("exclude", []))
         self.app_exclude = set(config_file.get("app_exclude", []))
 
@@ -276,7 +287,7 @@ class AppInfo:
 
     def create_dirs(self):
 
-        self.build_path = pathlib.Path("dist")
+        self.build_path = pathlib.Path(build_artifact_dir)
 
         print(f"Creating build directory {self.build_path}")
 
@@ -589,14 +600,14 @@ class AppInfo:
 
         if self.copy_files:
             print("Copying any additional files")
-            for src_file, dest in self.copy_files:
-                srcs = pathlib.Path().glob(src_file)
-                target = self.build_path / dest
-                if not target.exists():
-                    target.mkdir()
+            # TODO: path replacement
+            for src_path, dest in self.copy_files:
+                srcs = pathlib.Path().glob(src_path)
                 for src in srcs:
-                    vprint("\t", src)
-                    shutil.copy(src, target)
+                    if src.is_dir():
+                        shutil.copytree(src, self.build_path/src)
+                    else:
+                        shutil.copy(src, self.build_path/src)
 
     def rename_execs(self):
 
