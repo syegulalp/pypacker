@@ -26,6 +26,8 @@ If you have Git installed:
 
 `pip install -U git+https://github.com/syegulalp/pypacker`
 
+*Do not install PyPacker into your underlying Python installation.* It does not work reliably there.
+
 ## Usage
 
 ### 1. Run application
