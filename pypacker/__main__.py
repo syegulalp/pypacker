@@ -419,12 +419,15 @@ class AppInfo:
                 all_libs.add(pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
                 outfile = pathlib.Path(PATH_TO_VENV_LIBS, file)
                 compiled = py_compile.compile(outfile, optimize=pyc_opt_level)
+                vprint(outfile)
                 self.pkgzip.write(
                     compiled,
                     pathlib.Path(file + "c"),
                 )
 
             self.pkgzip.close()
+
+            print ("Creating libpath copies")
 
             for libpath in all_libs:
                 ts = True
@@ -450,6 +453,7 @@ class AppInfo:
                             target_directory = pathlib.Path(*t)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
+                            vprint(f, ">>", target_directory)
                             shutil.copy(pathlib.Path(path, f), target_directory)
                             continue
 
@@ -460,6 +464,7 @@ class AppInfo:
                             target_directory = pathlib.Path(self.build_path, ppath)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
+                            vprint(f, ">>", target_directory)
                             shutil.copy(pathlib.Path(path, f), target_directory)
 
         else:
@@ -486,8 +491,10 @@ class AppInfo:
                             compiled = py_compile.compile(
                                 pathlib.Path(path, f), optimize=pyc_opt_level
                             )
+                            vprint(outfile)
                             shutil.copy(compiled, outfile)
                         else:
+                            vprint(f, ">>", target_directory)
                             shutil.copy(pathlib.Path(path, f), target_directory)
 
             self.pkgzip.close()
