@@ -572,6 +572,13 @@ class AppInfo:
                     p2 = pathlib.Path(path).parts[0]
                     ap2.add(p2)
 
+            pyc_in_dir = False
+
+            for dir in ap2:
+                for path, _, files in os.walk(dir):
+                    if any(f.endswith("pyd") for f in files):
+                        pyc_in_dir = True
+            
             for f in toplevel:
                 compiled = py_compile.compile(
                     str(pathlib.Path(f).absolute()), optimize=pyc_opt_level
@@ -583,18 +590,22 @@ class AppInfo:
                     if "__pycache__" in path:
                         continue
                     for file in files:
-                        if not file.endswith(".py"):
+                        if file.endswith(".py"):
+                            out_file = py_compile.compile(
+                                str(pathlib.Path(path, file).absolute()),
+                                optimize=pyc_opt_level,
+                            )
+                            out_file_name = f"{file}c"
+                        else:
+                            out_file = pathlib.Path(path, file)
+                            out_file_name = file
+                        if pyc_in_dir:
                             target = pathlib.Path(self.build_path, path)
                             if not target.exists():
                                 target.mkdir(parents=True)
-                            shutil.copy(pathlib.Path(path, file), target)
-                            continue
-
-                        compiled = py_compile.compile(
-                            str(pathlib.Path(path, file).absolute()),
-                            optimize=pyc_opt_level,
-                        )
-                        self.app_zip.write(compiled, f"{path}\\{file}c")
+                            shutil.copy(out_file, target/ out_file_name)
+                        else:
+                            self.app_zip.write(out_file, f"{path}\\{file}c")
 
             self.app_zip.close()
 
