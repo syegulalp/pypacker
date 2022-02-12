@@ -62,6 +62,7 @@ If you want to make changes to the app that don't impact its analysis (e.g., no 
 * The main program tree is turned into a `.zip` file (of `.pyc` files).
 * Any non-Python files in the main program tree are copied into a parallel directory off the root of the `dist` directory.
 * Usage of `.pyd` files and (some) `.dll`s are automatically detected as well and copied.
+* **NOTE:** If PyPacker detects `.pyd` and `.py` files in the same directory, it will default to copying everything in that directory into a parallel directory, rather than adding them to the `.zip` file. This is to ensure imports work as intended.
 * Third-party packages are also included.
 * Both console and windowed executables are provided.
 * Using TKinter and SQLite3 should be automatically detected, and the appropriate files should be copied into your redistributable.
