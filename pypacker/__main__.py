@@ -590,7 +590,9 @@ class AppInfo:
                     if "__pycache__" in path:
                         continue
                     for file in files:
+                        py_file = False
                         if file.endswith(".py"):
+                            py_file = True
                             out_file = py_compile.compile(
                                 str(pathlib.Path(path, file).absolute()),
                                 optimize=pyc_opt_level,
@@ -599,13 +601,13 @@ class AppInfo:
                         else:
                             out_file = pathlib.Path(path, file)
                             out_file_name = file
-                        if pyc_in_dir:
+                        if pyc_in_dir or not py_file:
                             target = pathlib.Path(self.build_path, path)
                             if not target.exists():
                                 target.mkdir(parents=True)
                             shutil.copy(out_file, target/ out_file_name)
-                        else:
-                            self.app_zip.write(out_file, f"{path}\\{file}c")
+                        else:                            
+                            self.app_zip.write(out_file, f"{path}\\{out_file_name}")
 
             self.app_zip.close()
 
