@@ -1,5 +1,5 @@
 import sys
-import pathlib
+from pathlib import Path, PureWindowsPath
 import shutil
 import zipfile
 import py_compile
@@ -58,9 +58,9 @@ entry_function = None
 build_artifact_dir = "dist"
 
 PY_VERSION = f"python{sys.version_info[0]}{sys.version_info[1]}"
-PATH_TO_ORIGINAL_EXECUTABLE = pathlib.Path(sys.base_prefix)
+PATH_TO_ORIGINAL_EXECUTABLE = Path(sys.base_prefix)
 PATH_TO_ORIGINAL_LIBS = PATH_TO_ORIGINAL_EXECUTABLE / "Lib"
-PATH_TO_VENV_LIBS = pathlib.Path(sys.prefix, "Lib", "site-packages")
+PATH_TO_VENV_LIBS = Path(sys.prefix, "Lib", "site-packages")
 
 copy_files_cmdline = []
 
@@ -91,7 +91,7 @@ for idx, a in enumerate(sys.argv):
         build_artifact_dir = sys.argv[idx + 1]
 
     elif a == "-cp":
-        copy_files_cmdline.append([sys.argv[idx + 1],'.'])
+        copy_files_cmdline.append([sys.argv[idx + 1], "."])
 
 
 class Analysis:
@@ -141,15 +141,15 @@ with open("{self.app_name}.tmp","w") as f:
             f.write(temp)
 
     def delete_analysis_script(self):
-        pathlib.Path(f"{self.app_name}_analysis.py").unlink()
+        Path(f"{self.app_name}_analysis.py").unlink()
 
     def delete_tempdata(self):
-        pathlib.Path(f"{self.app_name}.tmp").unlink()
+        Path(f"{self.app_name}.tmp").unlink()
 
     def analyze(self):
         self.standalone_file = None
 
-        as_module = pathlib.Path(self.app_name)
+        as_module = Path(self.app_name)
 
         print("Looking for", as_module.absolute())
 
@@ -175,11 +175,11 @@ with open("{self.app_name}.tmp","w") as f:
         subprocess.run(["py", f"{self.app_name}_analysis.py"])
 
         site_pkgs = site.getsitepackages()
-        lib_dir = pathlib.Path(subprocess.__file__).parent
+        lib_dir = Path(subprocess.__file__).parent
 
         print(f"Starting analysis for {self.app_name}")
 
-        root_app_dir = pathlib.Path(f"{self.app_name}.tmp").parent.absolute()
+        root_app_dir = Path(f"{self.app_name}.tmp").parent.absolute()
 
         with open(f"{self.app_name}.tmp") as f:
             loaded_modules = json.load(f)
@@ -266,7 +266,7 @@ class AppInfo:
         else:
             self.app_title = self.appdir
 
-        self.abs_root_path = pathlib.Path(".").absolute()
+        self.abs_root_path = Path(".").absolute()
 
         self.stdlib = config_file["std_lib"]
         self.app_lib = config_file["app_lib"]
@@ -287,7 +287,7 @@ class AppInfo:
 
     def create_dirs(self):
 
-        self.build_path = pathlib.Path(build_artifact_dir)
+        self.build_path = Path(build_artifact_dir)
 
         print(f"Creating build directory {self.build_path}")
 
@@ -295,7 +295,7 @@ class AppInfo:
             shutil.rmtree(self.build_path)
         self.build_path.mkdir(parents=True)
 
-        self.lib_target_path = pathlib.Path(self.build_path, ".data")
+        self.lib_target_path = Path(self.build_path, ".data")
         if self.lib_target_path.exists():
             shutil.rmtree(self.lib_target_path)
         self.lib_target_path.mkdir(parents=True)
@@ -307,9 +307,7 @@ class AppInfo:
         base_files = ["python.exe", "pythonw.exe", f"{PY_VERSION}.dll"]
 
         for file in base_files:
-            shutil.copy(
-                pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, file), self.build_path
-            )
+            shutil.copy(Path(PATH_TO_ORIGINAL_EXECUTABLE, file), self.build_path)
 
         target_path_for_base_files = self.lib_target_path.parts[-1]
 
@@ -341,18 +339,18 @@ class AppInfo:
         self.stdlib.extend(self.binaries)
         self.stdlib.extend(
             [
-                str(pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-7.dll")),
-                str(pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-8.dll")),
+                str(Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-7.dll")),
+                str(Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLS", "libffi-8.dll")),
                 "encodings/cp437.py",
             ]
         )
         all_libs = set(self.stdlib)
 
-        vpath = pathlib.PureWindowsPath(PATH_TO_VENV_LIBS)
+        vpath = PureWindowsPath(PATH_TO_VENV_LIBS)
 
         for lib in all_libs:
 
-            lp = pathlib.PureWindowsPath(lib)
+            lp = PureWindowsPath(lib)
             llp = None
             try:
                 llp = lp.relative_to(vpath)
@@ -384,7 +382,7 @@ class AppInfo:
                     shutil.copy(lib, target_directory)
 
                 elif lib.startswith(str(self.abs_root_path)):
-                    target_path = pathlib.Path(lib.replace(str(self.abs_root_path), ""))
+                    target_path = Path(lib.replace(str(self.abs_root_path), ""))
                     target_directory = self.build_path / str(target_path.parent.name)
                     if not target_directory.exists():
                         target_directory.mkdir(parents=True)
@@ -416,30 +414,27 @@ class AppInfo:
             print("Treeshaking")
 
             for file in self.app_lib:
-                all_libs.add(pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
-                outfile = pathlib.Path(PATH_TO_VENV_LIBS, file)
+                all_libs.add(Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
+                outfile = Path(PATH_TO_VENV_LIBS, file)
                 compiled = py_compile.compile(outfile, optimize=pyc_opt_level)
                 vprint(outfile)
                 self.pkgzip.write(
                     compiled,
-                    pathlib.Path(file + "c"),
+                    Path(file + "c"),
                 )
 
             self.pkgzip.close()
 
-            print ("Creating libpath copies")
+            print("Creating libpath copies")
 
             for libpath in all_libs:
                 ts = True
 
-                if (
-                    treeshake_exclude
-                    and pathlib.Path(libpath).stem in treeshake_exclude
-                ):
+                if treeshake_exclude and Path(libpath).stem in treeshake_exclude:
                     ts = False
                 elif treeshake_include:
                     ts = False
-                    if pathlib.Path(libpath).stem in treeshake_include:
+                    if Path(libpath).stem in treeshake_include:
                         ts = True
 
                 for path, _, files in os.walk(libpath):
@@ -448,54 +443,54 @@ class AppInfo:
                     for f in files:
                         if not ts:
                             fpath = path.replace(str(libpath), "")
-                            outpath = pathlib.Path(libpath).stem
+                            outpath = Path(libpath).stem
                             t = (self.build_path, outpath, str(fpath).lstrip("\\"))
-                            target_directory = pathlib.Path(*t)
+                            target_directory = Path(*t)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
                             vprint(f, ">>", target_directory)
-                            shutil.copy(pathlib.Path(path, f), target_directory)
+                            shutil.copy(Path(path, f), target_directory)
                             continue
 
                         if not f.endswith((".py", ".pyc")):
-                            path_parent = pathlib.Path(libpath).parent
+                            path_parent = Path(libpath).parent
                             # XXX
                             ppath = path.replace(str(path_parent) + "\\", "")
-                            target_directory = pathlib.Path(self.build_path, ppath)
+                            target_directory = Path(self.build_path, ppath)
                             if not target_directory.exists():
                                 target_directory.mkdir(parents=True)
                             vprint(f, ">>", target_directory)
-                            shutil.copy(pathlib.Path(path, f), target_directory)
+                            shutil.copy(Path(path, f), target_directory)
 
         else:
 
             print("All libs")
 
             for file in self.app_lib:
-                all_libs.add(pathlib.Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
+                all_libs.add(Path(PATH_TO_VENV_LIBS, file.split("\\", 1)[0]))
 
             for libpath in all_libs:
                 for path, _, files in os.walk(libpath):
                     if "__pycache__" in path:
                         continue
-                    outpath = pathlib.Path(libpath).stem
+                    outpath = Path(libpath).stem
                     fpath = path.replace(str(libpath), "")
                     for f in files:
-                        outpath = pathlib.Path(libpath).stem
+                        outpath = Path(libpath).stem
                         t = (self.build_path, outpath, str(fpath).lstrip("\\"))
-                        target_directory = pathlib.Path(*t)
+                        target_directory = Path(*t)
                         if not target_directory.exists():
                             target_directory.mkdir(parents=True)
                         if f.endswith(".py"):
-                            outfile = pathlib.Path(target_directory, str(f) + "c")
+                            outfile = Path(target_directory, str(f) + "c")
                             compiled = py_compile.compile(
-                                pathlib.Path(path, f), optimize=pyc_opt_level
+                                Path(path, f), optimize=pyc_opt_level
                             )
                             vprint(outfile)
                             shutil.copy(compiled, outfile)
                         else:
                             vprint(f, ">>", target_directory)
-                            shutil.copy(pathlib.Path(path, f), target_directory)
+                            shutil.copy(Path(path, f), target_directory)
 
             self.pkgzip.close()
 
@@ -516,7 +511,7 @@ class AppInfo:
             for file in self.app_modules:
                 if any(file.startswith(x) for x in self.app_exclude):
                     vprint("Excluding", file)
-                path_to_file = pathlib.Path(file)
+                path_to_file = Path(file)
                 if str(path_to_file.parent) != ".":
                     all_paths.add(path_to_file.parent)
                 if not path_to_file.exists():
@@ -534,10 +529,10 @@ class AppInfo:
                     ap2.add(path)
 
             for dir in ap2:
-                for file in pathlib.Path(dir).glob("*"):
+                for file in Path(dir).glob("*"):
                     if file.is_file():
                         if not file.suffix == ".py":
-                            target = pathlib.Path(self.build_path, dir)
+                            target = Path(self.build_path, dir)
                             if not target.exists():
                                 target.mkdir(parents=True)
                             shutil.copy(file, target)
@@ -551,13 +546,13 @@ class AppInfo:
             toplevel = set()
 
             for file in self.app_modules:
-                p = pathlib.Path(file)
+                p = Path(file)
                 if p.exists() and str(p.parent) == ".":
                     toplevel.add(file)
                     continue
                 if any(file.startswith(x) for x in self.app_exclude):
                     vprint("Excluding", file)
-                path_to_file = pathlib.Path(file)
+                path_to_file = Path(file)
                 if str(path_to_file.parent) != ".":
                     all_paths.add(path_to_file.parent)
                 if not path_to_file.exists():
@@ -569,7 +564,7 @@ class AppInfo:
                 for path, _, files in os.walk(p):
                     if "__pycache__" in path:
                         continue
-                    p2 = pathlib.Path(path).parts[0]
+                    p2 = Path(path).parts[0]
                     ap2.add(p2)
 
             pyc_in_dir = False
@@ -578,10 +573,10 @@ class AppInfo:
                 for path, _, files in os.walk(dir):
                     if any(f.endswith("pyd") for f in files):
                         pyc_in_dir = True
-            
+
             for f in toplevel:
                 compiled = py_compile.compile(
-                    str(pathlib.Path(f).absolute()), optimize=pyc_opt_level
+                    str(Path(f).absolute()), optimize=pyc_opt_level
                 )
                 self.app_zip.write(compiled, f"{f}c")
 
@@ -594,19 +589,19 @@ class AppInfo:
                         if file.endswith(".py"):
                             py_file = True
                             out_file = py_compile.compile(
-                                str(pathlib.Path(path, file).absolute()),
+                                str(Path(path, file).absolute()),
                                 optimize=pyc_opt_level,
                             )
                             out_file_name = f"{file}c"
                         else:
-                            out_file = pathlib.Path(path, file)
+                            out_file = Path(path, file)
                             out_file_name = file
                         if pyc_in_dir or not py_file:
-                            target = pathlib.Path(self.build_path, path)
+                            target = Path(self.build_path, path)
                             if not target.exists():
                                 target.mkdir(parents=True)
-                            shutil.copy(out_file, target/ out_file_name)
-                        else:                            
+                            shutil.copy(out_file, target / out_file_name)
+                        else:
                             self.app_zip.write(out_file, f"{path}\\{out_file_name}")
 
             self.app_zip.close()
@@ -622,17 +617,17 @@ class AppInfo:
             print("Copying any additional files")
             # TODO: path replacement
             for src_path, dest in self.copy_files:
-                srcs = pathlib.Path().glob(src_path)
+                srcs = Path().glob(src_path)
                 for src in srcs:
                     if src.is_dir():
-                        shutil.copytree(src, self.build_path/src)
+                        shutil.copytree(src, self.build_path / src)
                     else:
-                        shutil.copy(src, self.build_path/src)
+                        shutil.copy(src, self.build_path / src)
 
     def rename_execs(self):
 
         for exe, extension in (("pythonw.exe", ".exe"), ("python.exe", "_console.exe")):
-            pathlib.Path(self.build_path, exe).rename(
+            Path(self.build_path, exe).rename(
                 self.build_path / f"{self.app_title}{extension}"
             )
 
@@ -645,23 +640,21 @@ class AppInfo:
         )
 
         for path, _, files in os.walk(self.build_path):
-            p = pathlib.Path(path).parts[1:]
+            p = Path(path).parts[1:]
             for f in files:
-                self.dist_zip.write(pathlib.Path(path, f), pathlib.Path(*p, f))
+                self.dist_zip.write(Path(path, f), Path(*p, f))
 
     def add_special_libs(self):
 
         if self.use_sqlite3:
-            sqlite_src = pathlib.Path(
-                PATH_TO_ORIGINAL_EXECUTABLE, "DLLs", "sqlite3.dll"
-            )
+            sqlite_src = Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLs", "sqlite3.dll")
             shutil.copy(sqlite_src, self.lib_target_path)
 
         if self.use_tk:
-            tk_src = pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "tcl")
-            tk_dest = pathlib.Path(self.build_path, "Lib")
+            tk_src = Path(PATH_TO_ORIGINAL_EXECUTABLE, "tcl")
+            tk_dest = Path(self.build_path, "Lib")
             shutil.copytree(tk_src, tk_dest)
-            dll_src = pathlib.Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLs")
+            dll_src = Path(PATH_TO_ORIGINAL_EXECUTABLE, "DLLs")
             for f in dll_src.glob("t*.dll"):
                 shutil.copy(f, self.lib_target_path)
             unneeded_lib = tk_dest.glob("*.lib")
@@ -690,7 +683,7 @@ def main():
 
     print(f"Reading config file {config_file}")
 
-    config_file_obj = pathlib.Path(config_file)
+    config_file_obj = Path(config_file)
 
     if not config_file_obj.exists():
         raise IniFileMissing(
