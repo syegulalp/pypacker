@@ -55,12 +55,15 @@ treeshake_include = set()
 pyc_opt_level = 0
 
 entry_function = None
-build_artifact_dir = "dist"
+
+BUILD_ARTIFACT_DIR = "dist"
+TARGET_BIN_PATH = ".bin"
 
 PY_VERSION = f"python{sys.version_info[0]}{sys.version_info[1]}"
 PATH_TO_ORIGINAL_EXECUTABLE = Path(sys.base_prefix)
 PATH_TO_ORIGINAL_LIBS = PATH_TO_ORIGINAL_EXECUTABLE / "Lib"
 PATH_TO_VENV_LIBS = Path(sys.prefix, "Lib", "site-packages")
+
 
 copy_files_cmdline = []
 
@@ -88,7 +91,7 @@ for idx, a in enumerate(sys.argv):
         entry_function = sys.argv[idx + 1]
 
     elif a == "-od":
-        build_artifact_dir = sys.argv[idx + 1]
+        BUILD_ARTIFACT_DIR = sys.argv[idx + 1]
 
     elif a == "-cp":
         copy_files_cmdline.append([sys.argv[idx + 1], "."])
@@ -287,7 +290,7 @@ class AppInfo:
 
     def create_dirs(self):
 
-        self.build_path = Path(build_artifact_dir)
+        self.build_path = Path(BUILD_ARTIFACT_DIR)
 
         print(f"Creating build directory {self.build_path}")
 
@@ -295,7 +298,7 @@ class AppInfo:
             shutil.rmtree(self.build_path)
         self.build_path.mkdir(parents=True)
 
-        self.lib_target_path = Path(self.build_path, ".data")
+        self.lib_target_path = Path(self.build_path, TARGET_BIN_PATH)
         if self.lib_target_path.exists():
             shutil.rmtree(self.lib_target_path)
         self.lib_target_path.mkdir(parents=True)
