@@ -1,3 +1,4 @@
+from re import L
 import sys
 from pathlib import Path, PureWindowsPath
 import shutil
@@ -27,10 +28,12 @@ usage: pypacker
     
     -tli <libname> -- treeshake library <libname>
     -tlx <libname> -- exclude library <libname> from treeshaking (implies -tl)
+    (-tli/tlx can be specified more than once)
 
     -cp <wildcard> -- copy in files matching a given glob wildcard
-
-    -tli/tlx can be specified more than once
+    -cx <wildcard> -- exclude files matching a given glob wildcard
+    (-cx can be specified more than once; does not yet support
+    suppressing file copies from libraries, only app tree)
 
     -o [1/2] -- specify optimization level for .pyc files, default is 0
     (some modules will object if you remove docstrings)
@@ -51,6 +54,7 @@ retain_analysis = "-ax" in sys.argv
 
 treeshake_exclude = set()
 treeshake_include = set()
+file_exclusions = set()
 
 pyc_opt_level = 0
 
@@ -68,19 +72,20 @@ PATH_TO_VENV_LIBS = Path(sys.prefix, "Lib", "site-packages")
 copy_files_cmdline = []
 
 for idx, a in enumerate(sys.argv):
+    id = idx + 1
     if a == "-tlx":
-        treeshake_exclude.add(sys.argv[idx + 1])
+        treeshake_exclude.add(sys.argv[id])
         treeshake_include = None
         treeshake_libs = True
 
     elif a == "-tli":
-        treeshake_include.add(sys.argv[idx + 1])
+        treeshake_include.add(sys.argv[id])
         treeshake_exclude = None
         treeshake_libs = True
 
     elif a == "-o":
         try:
-            level = int(sys.argv[idx + 1])
+            level = int(sys.argv[id])
         except ValueError:
             print("Invalid optimization level supplied; defaulting to 0")
         else:
@@ -88,13 +93,16 @@ for idx, a in enumerate(sys.argv):
         pyc_opt_level = level
 
     elif a == "-f":
-        entry_function = sys.argv[idx + 1]
+        entry_function = sys.argv[id]
 
     elif a == "-od":
-        BUILD_ARTIFACT_DIR = sys.argv[idx + 1]
+        BUILD_ARTIFACT_DIR = sys.argv[id]
 
     elif a == "-cp":
-        copy_files_cmdline.append([sys.argv[idx + 1], "."])
+        copy_files_cmdline.append([sys.argv[id], "."])
+
+    elif a == "-cx":
+        file_exclusions.add(sys.argv[id])
 
 
 class Analysis:
@@ -226,8 +234,9 @@ with open("{self.app_name}.tmp","w") as f:
             "app_modules": sorted(set(app_modules)),
             "binaries": sorted(set(binaries)),
             "copy": copy_files_cmdline,
-            "exclude": [],
+            "lib_exclude": [],
             "app_exclude": [],
+            "file_exclude": sorted(set(file_exclusions)),
             "entry_function": entry_function,
         }
 
@@ -279,8 +288,16 @@ class AppInfo:
         self.binaries = config_file.get("binaries", [])
 
         self.copy_files = config_file.get("copy", [])
-        self.exclude = set(config_file.get("exclude", []))
+        self.lib_exclude = set(config_file.get("lib_exclude", []))
         self.app_exclude = set(config_file.get("app_exclude", []))
+        self.file_exclude_glob = set(config_file.get("file_exclude", []))
+
+        self.file_exclude = set()
+        for n in self.file_exclude_glob:
+            for nn in Path().glob(n):
+                self.file_exclude.add(str(Path(BUILD_ARTIFACT_DIR / nn)))
+
+        print("EXCLUSIONS", self.file_exclude)
 
         app_exec = "\n".join(self.app_exec)
         if self.standalone:
@@ -363,7 +380,7 @@ class AppInfo:
             if not (PATH_TO_ORIGINAL_LIBS / lib).exists():
                 print(f"\tWarning: {lib} not found")
                 continue
-            if lib in self.exclude:
+            if lib in self.lib_exclude:
                 vprint("\tExcluding", lib)
                 continue
 
@@ -601,6 +618,11 @@ class AppInfo:
                             out_file_name = file
                         if pyc_in_dir or not py_file:
                             target = Path(self.build_path, path)
+                            if (
+                                str(target / out_file_name) in self.file_exclude
+                                or str(target) in self.file_exclude
+                            ):
+                                continue
                             if not target.exists():
                                 target.mkdir(parents=True)
                             shutil.copy(out_file, target / out_file_name)
@@ -622,6 +644,8 @@ class AppInfo:
             for src_path, dest in self.copy_files:
                 srcs = Path().glob(src_path)
                 for src in srcs:
+                    if str(self.build_path / src) in self.file_exclude:
+                        continue
                     if src.is_dir():
                         shutil.copytree(src, self.build_path / src)
                     else:
@@ -706,7 +730,7 @@ def main():
     for item in appinfo.stdlib:
         vprint("\t", item)
     vprint(f"Exclude items:")
-    for item in appinfo.exclude:
+    for item in appinfo.lib_exclude:
         vprint("\t", item)
 
     print("Starting build process ...")

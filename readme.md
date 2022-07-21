@@ -97,8 +97,9 @@ The following command line options are supported:
 * `-v` -- Verbose output.
 * `-ax` -- Retain temporary files after completion of analysis. These are typically deleted automatically, but they can be saved for troubleshooting.
 * `-f` -- Specify an entry point function for the script, e.g., `-f main`.
-* `-cp` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once. Pypacker will make a best effort to reproduce the layout of the files in the distribution folder based on its relative position to the entry point. (Note that you generally do not need to specify this option for non-code files adjacent to code in a project subdirectory, since they will be copied by default in an attempt to preserve the original layout.)
 * `-od` -- Specify output directory for build artifact. Default is `dist` in the current working directory.
+* `-cp <glob>` -- Copy files into the distribution folder based on a `glob` pattern. You can specify this more than once. Pypacker will make a best effort to reproduce the layout of the files in the distribution folder based on its relative position to the entry point. (Note that you generally do not need to specify this option for non-code files adjacent to code in a project subdirectory, since they will be copied by default in an attempt to preserve the original layout.)
+* `-cx <glob>` -- Exclude files from the app tree directory matching a given glob wildcard. This can be specified more than once. Does not yet support suppressing file copies from libraries, only the app tree.
 
 ### Advanced options
 
