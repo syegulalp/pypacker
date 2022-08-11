@@ -1,0 +1,18 @@
+[project]
+name = "pypacker"
+version = "0.0.1"
+authors = [
+  { name="Serdar Yegulalp", email="serdar@infinimata.com" },
+]
+description = "Dead simple (er, primitive) script for packing a Python script into a redistributable .exe"
+readme = "readme.md"
+license = { file="LICENSE.txt" }
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.urls]
+"Homepage" = "http://pypi.python.org/pypi/PyPacker/"
+"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"

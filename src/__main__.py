@@ -600,6 +600,9 @@ class AppInfo:
                 )
                 self.app_zip.write(compiled, f"{f}c")
 
+            # future optimization:
+            # create set ahead of time, perform set intersection?
+            
             for dir in ap2:
                 for path, _, files in os.walk(dir):
                     if "__pycache__" in path:
