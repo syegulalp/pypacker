@@ -11,8 +11,8 @@ requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows"
 ]
 
 [project.urls]
 "Homepage" = "http://pypi.python.org/pypi/PyPacker/"
-"Bug Tracker" = "https://github.com/pypa/sampleproject/issues"
