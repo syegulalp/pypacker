@@ -1,4 +1,3 @@
-from re import L
 import sys
 from pathlib import Path, PureWindowsPath
 import shutil
@@ -282,7 +281,7 @@ class AppInfo:
 
         self.stdlib = config_file["std_lib"]
         self.app_lib = config_file["app_lib"]
-        self.app_exec = config_file["app_exec"]
+        self.app_exec: list = config_file["app_exec"]
         self.app_modules = config_file["app_modules"]
         self.lib_dirs = config_file.get("lib_dirs", [])
         self.binaries = config_file.get("binaries", [])
@@ -299,7 +298,20 @@ class AppInfo:
 
         print("EXCLUSIONS", self.file_exclude)
 
+        addl_data = []
+
+        print("venv", PATH_TO_VENV_LIBS)
+        for root, dirs, files in os.walk(PATH_TO_VENV_LIBS):
+            for file in files:
+                if file.endswith(".pth"):
+                    with open(Path(root, file)) as f:
+                        data = f.read()
+                    addl_data.append(data)
+
+        self.app_exec = addl_data + self.app_exec
+
         app_exec = "\n".join(self.app_exec)
+
         if self.standalone:
             self.boot = f"{app_exec}\nimport os\nos._exit(0)"
         else:
@@ -602,7 +614,7 @@ class AppInfo:
 
             # future optimization:
             # create set ahead of time, perform set intersection?
-            
+
             for dir in ap2:
                 for path, _, files in os.walk(dir):
                     if "__pycache__" in path:
