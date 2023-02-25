@@ -105,6 +105,7 @@ The following command line options are supported:
 
 These options provide more compact output, but at the risk of the program not working correctly.
 
+* `-an` -- perform analysis and write analysis files, but don't pack application. This is useful if you want to separate the analysis phase from the packing phase.
 * `-ta` -- Treeshaking analysis on the application. Attempts to copy *only* the application modules that ran during the analysis phase.
 * `-tl` -- Treeshaking analysis on the libraries. Attempts to copy *only* the library modules that ran during the analysis phase.
 * `-t` -- Shortcut for `-ta` and `-tl`.

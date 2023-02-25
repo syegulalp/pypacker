@@ -17,9 +17,15 @@ if len(sys.argv) == 1:
     print(
         """
 usage: pypacker
-    -a <module> -- analyze module
+    -a <module> -- analyze module    
     -f <function> -- function to run in module for entry point
     -v -- for verbose output
+
+    -w <directory> -- directory for output of compiled distribution and .zip file
+        (default is ./dist)
+
+    -an -- perform analysis and write analysis files,
+        but don't pack application
 
     -ta -- treeshake application
     -tl -- treeshake libraries    
@@ -50,6 +56,8 @@ if verbose:
 treeshake_app = "-ta" in sys.argv or "-t" in sys.argv
 treeshake_libs = "-tl" in sys.argv or "-t" in sys.argv
 retain_analysis = "-ax" in sys.argv
+just_pack = "-z" in sys.argv # not implemented yet
+just_analyze = "-an" in sys.argv
 
 treeshake_exclude = set()
 treeshake_include = set()
@@ -59,8 +67,8 @@ pyc_opt_level = 0
 
 entry_function = None
 
-BUILD_ARTIFACT_DIR = "dist"
-TARGET_BIN_PATH = ".bin"
+BUILD_ARTIFACT_DIR = Path("dist")
+TARGET_BIN_PATH = Path(".bin")
 
 PY_VERSION = f"python{sys.version_info[0]}{sys.version_info[1]}"
 PATH_TO_ORIGINAL_EXECUTABLE = Path(sys.base_prefix)
@@ -72,6 +80,8 @@ copy_files_cmdline = []
 
 for idx, a in enumerate(sys.argv):
     id = idx + 1
+    if a == "-w":
+        BUILD_ARTIFACT_DIR = Path(sys.argv[id])
     if a == "-tlx":
         treeshake_exclude.add(sys.argv[id])
         treeshake_include = None
@@ -431,6 +441,11 @@ class AppInfo:
                     lib + "c",
                 )
 
+    def add_entire_venv(self):
+        # TODO: get all libraries in venv -- get some standard mechanisms for this
+        # copy them into .bin uncompressed
+        pass
+                
     def add_libraries(self):
 
         print("Adding libraries")
@@ -678,13 +693,14 @@ class AppInfo:
         print("Creating distribution zip file")
 
         self.dist_zip = zipfile.ZipFile(
-            f"{self.app_title}.zip", "w", compression=zipfile.ZIP_DEFLATED
+            BUILD_ARTIFACT_DIR.parent / f"{self.app_title}.zip", "w", compression=zipfile.ZIP_DEFLATED
         )
+        print ("Build path", self.build_path)
 
         for path, _, files in os.walk(self.build_path):
-            p = Path(path).parts[1:]
+            p = Path(path.replace(str(self.build_path),"",1))
             for f in files:
-                self.dist_zip.write(Path(path, f), Path(*p, f))
+                self.dist_zip.write(Path(path, f), Path(p, f))
 
     def add_special_libs(self):
 
@@ -748,17 +764,19 @@ def main():
     for item in appinfo.lib_exclude:
         vprint("\t", item)
 
-    print("Starting build process ...")
+    if not just_analyze:
+        
+        print("Starting build process ...")
 
-    appinfo.create_dirs()
-    appinfo.copy_base_files()
-    appinfo.create_stdlib_archive()
-    appinfo.add_libraries()
-    appinfo.add_app_libraries()
-    appinfo.add_site_customization()
-    appinfo.add_special_libs()
-    appinfo.rename_execs()
-    appinfo.make_dist_zipfile()
+        appinfo.create_dirs()
+        appinfo.copy_base_files()
+        appinfo.create_stdlib_archive()
+        appinfo.add_libraries()
+        appinfo.add_app_libraries()
+        appinfo.add_site_customization()
+        appinfo.add_special_libs()
+        appinfo.rename_execs()
+        appinfo.make_dist_zipfile()
 
     print("Done.")
 
