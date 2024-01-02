@@ -1,3 +1,5 @@
+> **This project is being retired.** [Use pydeploy instead.](https://github.com/syegulalp/pydeploy)
+
 # PyPacker: a dumb little script for turning Python apps into standalone executable packages on Windows
 
 PyPacker is my attempt at creating a way to make Python apps fully portable on Windows. It does this by performing *live program analysis* to determine what to pack up.
